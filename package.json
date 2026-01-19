@@ -12,10 +12,10 @@
     "db:studio": "pnpm --filter @odds-trader/web db:studio"
   },
   "dependencies": {
-    "@prisma/client": "^5.10.0"
+    "@prisma/client": "^5.10.0",
+    "next": "14.1.0"
   },
   "devDependencies": {
-    "next": "14.1.0",
     "prisma": "^5.10.0",
     "turbo": "^2.0.0",
     "typescript": "^5.3.0"

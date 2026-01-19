@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npx pnpm@8 i && npx pnpm@8 --filter @odds-trader/shared build && npx pnpm@8 --filter @odds-trader/web build",
+  "outputDirectory": "apps/web/.next",
+  "framework": "nextjs"
+}
