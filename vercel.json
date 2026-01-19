@@ -1,4 +1,7 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm install -g pnpm@8 && pnpm install",
   "buildCommand": "pnpm --filter @odds-trader/shared build && pnpm --filter @odds-trader/web build",
   "outputDirectory": "apps/web/.next"
 }
