@@ -1,5 +1,4 @@
 {
-  "installCommand": "npm i -g pnpm && pnpm install",
   "buildCommand": "pnpm --filter @odds-trader/shared build && pnpm --filter @odds-trader/web build",
   "outputDirectory": "apps/web/.next"
 }
