@@ -1,0 +1,27 @@
+{
+  "name": "odds-trader",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "db:generate": "pnpm --filter @odds-trader/web db:generate",
+    "db:push": "pnpm --filter @odds-trader/web db:push",
+    "db:migrate": "pnpm --filter @odds-trader/web db:migrate",
+    "db:studio": "pnpm --filter @odds-trader/web db:studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.0"
+  },
+  "devDependencies": {
+    "next": "14.1.0",
+    "prisma": "^5.10.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

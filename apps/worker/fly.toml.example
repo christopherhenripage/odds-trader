@@ -1,0 +1,39 @@
+# fly.toml - Fly.io configuration for odds-trader worker
+# Rename this file to fly.toml and update as needed
+
+app = "odds-trader-worker"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+  [build.args]
+    # Build-time arguments if needed
+
+[env]
+  NODE_ENV = "production"
+  SCAN_INTERVAL_MS = "10000"
+  # SPORTS = "americanfootball_nfl,basketball_nba" # Uncomment to limit sports
+  MARKETS = "h2h,totals,spreads"
+  MIN_EDGE = "0.5"
+  MIN_MIDDLE_WIDTH = "0.5"
+  STAKE_DEFAULT = "100"
+  BUNDLE_WINDOW_MS = "10000"
+  MAX_PER_EVENT_BUNDLE = "5"
+  DEDUPE_TTL_MS = "180000"
+  ODDS_API_REGIONS = "us"
+
+# This worker doesn't need HTTP services
+# It runs continuously as a background process
+[processes]
+  worker = "node dist/index.js"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# Secrets to set via `fly secrets set`:
+# DATABASE_URL - PostgreSQL connection string
+# ODDS_API_KEY - The Odds API key
+# TELEGRAM_BOT_TOKEN - (optional) Telegram bot token
+# RESEND_API_KEY - (optional) Resend API key for email

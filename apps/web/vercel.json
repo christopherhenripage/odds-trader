@@ -1,0 +1,6 @@
+{
+  "framework": null,
+  "installCommand": "npm i -g pnpm && cd ../.. && pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm --filter @odds-trader/shared build && cd apps/web && pnpm exec next build",
+  "outputDirectory": ".next"
+}

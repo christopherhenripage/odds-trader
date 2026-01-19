@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// NextAuth Models
+// ============================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// User Model
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts             Account[]
+  sessions             Session[]
+  notificationSetting  NotificationSetting?
+  scannerSetting       ScannerSetting?
+  paperAccount         PaperAccount?
+  paperPositions       PaperPosition[]
+  opportunityDeliveries OpportunityDelivery[]
+}
+
+// ============================================
+// Notification Settings
+// ============================================
+
+enum NotificationChannel {
+  DISCORD
+  TELEGRAM
+  EMAIL
+  NONE
+}
+
+model NotificationSetting {
+  id              String              @id @default(cuid())
+  userId          String              @unique
+  channel         NotificationChannel @default(NONE)
+  discordWebhook  String?
+  telegramBotToken String?
+  telegramChatId  String?
+  emailTo         String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Scanner Settings (per user)
+// ============================================
+
+model ScannerSetting {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  minEdge         Float    @default(0.5)
+  minMiddleWidth  Float    @default(0.5)
+  stakeDefault    Float    @default(100)
+  sportsSelection String[] @default([])
+  marketsSelection String[] @default(["h2h", "totals", "spreads"])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Opportunity Model
+// ============================================
+
+enum OpportunityType {
+  ARB
+  MIDDLE
+}
+
+model Opportunity {
+  id            String          @id @default(cuid())
+  fingerprint   String          @unique
+  createdAt     DateTime        @default(now())
+  eventId       String
+  sportKey      String
+  sportTitle    String?
+  commenceTime  DateTime
+  homeTeam      String
+  awayTeam      String
+  type          OpportunityType
+  marketKey     String
+  edgePct       Float
+  middleWidth   Float?
+  legs          Json
+  raw           Json?
+
+  deliveries OpportunityDelivery[]
+
+  @@index([createdAt])
+  @@index([sportKey])
+  @@index([type])
+  @@index([eventId])
+}
+
+// ============================================
+// Opportunity Delivery Tracking
+// ============================================
+
+enum DeliveryStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model OpportunityDelivery {
+  id            String              @id @default(cuid())
+  opportunityId String
+  userId        String
+  status        DeliveryStatus
+  channel       NotificationChannel
+  error         String?
+  createdAt     DateTime            @default(now())
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([opportunityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================
+// Paper Trading Models
+// ============================================
+
+model PaperAccount {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  bankroll        Float    @default(1000)
+  maxOpen         Int      @default(5)
+  enabled         Boolean  @default(false)
+  autoFill        Boolean  @default(false)
+  latencyMsMin    Int      @default(400)
+  latencyMsMax    Int      @default(2200)
+  slippageBps     Int      @default(35)
+  missFillProb    Float    @default(0.08)
+  maxLegOddsWorsen Float   @default(0.15)
+  fillEvenIfEdgeLost Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum PaperPositionStatus {
+  OPEN
+  CLOSED
+  MISSED
+  EDGE_LOST
+}
+
+model PaperPosition {
+  id          String              @id @default(cuid())
+  userId      String
+  createdAt   DateTime            @default(now())
+  closedAt    DateTime?
+  type        OpportunityType
+  eventId     String
+  summary     String
+  stakeTotal  Float
+  edgePct     Float
+  status      PaperPositionStatus
+  legs        Json
+  notes       String?
+  payout      Float?
+  latencyMs   Int?
+  slippageApplied Json?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================
+// Worker Heartbeat
+// ============================================
+
+model WorkerHeartbeat {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  lastScanAt  DateTime
+  polls       Int      @default(0)
+  lastError   String?
+  apiCalls    Int      @default(0)
+
+  @@index([createdAt])
+}
