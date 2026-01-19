@@ -1,26 +1,25 @@
 import Link from 'next/link';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   TrendingUp,
-  Bell,
-  Wallet,
-  Zap,
-  Shield,
-  BarChart3,
   ArrowRight,
   Activity,
-  Cpu,
-  Radio,
   Target,
   Sparkles,
+  DollarSign,
+  BookOpen,
+  CheckCircle2,
+  AlertCircle,
+  Calculator,
+  BarChart3,
+  Clock,
+  Percent,
+  Scale,
+  ChevronRight,
 } from 'lucide-react';
 
-export default async function LandingPage() {
-  const session = await getServerSession(authOptions);
-
+export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Animated background grid */}
@@ -30,6 +29,16 @@ export default async function LandingPage() {
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-neon-purple/20 rounded-full blur-[128px] animate-pulse-slow" />
       <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-neon-cyan/20 rounded-full blur-[128px] animate-pulse-slow" style={{ animationDelay: '1s' }} />
       <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-neon-green/10 rounded-full blur-[128px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
+
+      {/* Demo Notice Banner */}
+      <div className="relative bg-gradient-to-r from-neon-purple/20 via-neon-cyan/20 to-neon-purple/20 border-b border-white/10">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-center gap-2 text-sm">
+          <AlertCircle className="h-4 w-4 text-neon-cyan" />
+          <span className="text-white/70">
+            <span className="text-neon-cyan font-semibold">Demo Mode:</span> This app is running with sample data for demonstration purposes
+          </span>
+        </div>
+      </div>
 
       {/* Header */}
       <header className="relative border-b border-white/5 backdrop-blur-sm">
@@ -45,9 +54,15 @@ export default async function LandingPage() {
             </span>
           </div>
           <nav className="flex items-center gap-4">
+            <Link href="#learn" className="text-white/50 hover:text-white transition-colors hidden sm:block">
+              Learn
+            </Link>
+            <Link href="#dashboard-guide" className="text-white/50 hover:text-white transition-colors hidden sm:block">
+              Guide
+            </Link>
             <Button asChild className="btn-neon bg-neon-green hover:bg-neon-green/90 text-black font-semibold">
               <Link href="/dashboard">
-                Launch App <ArrowRight className="ml-2 h-4 w-4" />
+                View Dashboard <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </nav>
@@ -55,256 +70,355 @@ export default async function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-24 px-4">
+      <section className="relative py-16 md:py-24 px-4">
         <div className="container mx-auto text-center max-w-5xl">
-          {/* Live indicator */}
-          <div className="flex justify-center mb-8">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-neon-green/30 bg-neon-green/5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
-              </span>
-              <span className="text-sm text-neon-green font-mono">SCANNER ACTIVE</span>
-            </div>
-          </div>
-
           {/* Badges */}
           <div className="flex justify-center gap-3 mb-8">
             <Badge variant="arb" className="badge-arb px-4 py-1.5 text-sm font-mono">ARB</Badge>
             <Badge variant="middle" className="badge-middle px-4 py-1.5 text-sm font-mono">MIDDLE</Badge>
-            <Badge variant="paper" className="badge-paper px-4 py-1.5 text-sm font-mono">PAPER</Badge>
           </div>
 
           {/* Main headline */}
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            <span className="gradient-text-neon">Find Betting Edges</span>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+            <span className="gradient-text-neon">Sports Betting</span>
             <br />
-            <span className="text-white">Before They Disappear</span>
+            <span className="text-white">Arbitrage Scanner</span>
           </h1>
 
-          <p className="text-xl text-white/60 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Real-time arbitrage and middle scanner across sportsbooks.
-            Get instant alerts, paper trade with realistic simulation,
-            and never miss an opportunity again.
+          <p className="text-lg md:text-xl text-white/60 mb-10 max-w-2xl mx-auto leading-relaxed">
+            Find guaranteed profit opportunities by exploiting price differences across sportsbooks.
+            This tool scans odds in real-time and calculates exactly how much to bet on each side.
           </p>
 
           {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button size="lg" asChild className="btn-neon bg-neon-green hover:bg-neon-green/90 text-black font-semibold text-lg px-8 h-14">
               <Link href="/dashboard">
-                Start Scanning <Sparkles className="ml-2 h-5 w-5" />
+                Explore Dashboard <Sparkles className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="border-white/20 hover:border-neon-cyan/50 hover:bg-neon-cyan/5 text-white h-14 px-8">
-              <Link href="#features">
-                <Cpu className="mr-2 h-5 w-5" /> How It Works
+              <Link href="#learn">
+                <BookOpen className="mr-2 h-5 w-5" /> Learn How It Works
               </Link>
             </Button>
           </div>
 
-          {/* Terminal-style preview */}
-          <div className="relative max-w-3xl mx-auto">
-            <div className="absolute -inset-1 bg-gradient-to-r from-neon-green via-neon-cyan to-neon-purple rounded-lg blur opacity-25" />
-            <div className="relative bg-black border border-white/10 rounded-lg overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/5">
-                <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                <span className="ml-4 text-xs text-white/40 font-mono">odds-trader — scanner</span>
-              </div>
-              <div className="p-6 font-mono text-sm text-left space-y-2">
-                <div className="text-white/40">$ scanning 50+ sports...</div>
-                <div className="flex items-center gap-2">
-                  <span className="text-neon-green">✓</span>
-                  <span className="text-white/80">NBA: Lakers vs Celtics</span>
-                  <span className="text-neon-green font-bold">+2.3% ARB</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-neon-cyan">✓</span>
-                  <span className="text-white/80">NFL: Chiefs vs Bills</span>
-                  <span className="text-neon-cyan font-bold">3.5pt MIDDLE</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-neon-green">✓</span>
-                  <span className="text-white/80">NCAAB: Duke vs UNC</span>
-                  <span className="text-neon-green font-bold">+1.8% ARB</span>
-                </div>
-                <div className="text-neon-purple animate-pulse">▌ Processing opportunities...</div>
-              </div>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-3 gap-4 max-w-xl mx-auto">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <div className="text-2xl md:text-3xl font-bold text-neon-green font-mono">50+</div>
+              <div className="text-xs text-white/40 uppercase">Opportunities</div>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <div className="text-2xl md:text-3xl font-bold text-neon-cyan font-mono">6</div>
+              <div className="text-xs text-white/40 uppercase">Sportsbooks</div>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <div className="text-2xl md:text-3xl font-bold text-neon-purple font-mono">5</div>
+              <div className="text-xs text-white/40 uppercase">Sports</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="relative py-16 px-4 border-y border-white/5">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="group">
-              <div className="stat-value text-4xl font-bold text-neon-green mb-2 group-hover:animate-pulse">10s</div>
-              <div className="text-sm text-white/40 uppercase tracking-wider">Scan Interval</div>
-            </div>
-            <div className="group">
-              <div className="stat-value text-4xl font-bold text-neon-cyan mb-2 group-hover:animate-pulse">0.5%+</div>
-              <div className="text-sm text-white/40 uppercase tracking-wider">Min Edge</div>
-            </div>
-            <div className="group">
-              <div className="stat-value text-4xl font-bold text-neon-pink mb-2 group-hover:animate-pulse">50+</div>
-              <div className="text-sm text-white/40 uppercase tracking-wider">Sports</div>
-            </div>
-            <div className="group">
-              <div className="stat-value text-4xl font-bold text-neon-purple mb-2 group-hover:animate-pulse">3</div>
-              <div className="text-sm text-white/40 uppercase tracking-wider">Alert Channels</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="relative py-24 px-4">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">
-              <span className="text-white">Everything You Need to </span>
-              <span className="text-neon-cyan">Trade Smarter</span>
+      {/* What is Arbitrage Section */}
+      <section id="learn" className="relative py-16 md:py-24 px-4 border-t border-white/5">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-12">
+            <Badge variant="arb" className="mb-4">ARB</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <span className="text-white">What is </span>
+              <span className="text-neon-green">Arbitrage Betting?</span>
             </h2>
             <p className="text-white/50 max-w-2xl mx-auto">
-              Professional-grade tools for finding and executing betting edges
+              Arbitrage (or &quot;arbing&quot;) is when you bet on ALL outcomes of an event at different sportsbooks,
+              locking in a guaranteed profit regardless of who wins.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Feature Card 1 */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-green to-neon-cyan rounded-xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-              <div className="relative bg-black border border-white/10 rounded-xl p-6 hover:border-neon-green/30 transition-colors">
-                <div className="w-12 h-12 rounded-lg bg-neon-green/10 flex items-center justify-center mb-4">
-                  <TrendingUp className="h-6 w-6 text-neon-green" />
+          {/* Arbitrage Example */}
+          <div className="relative max-w-3xl mx-auto">
+            <div className="absolute -inset-1 bg-gradient-to-r from-neon-green to-neon-cyan rounded-xl blur opacity-20" />
+            <div className="relative bg-black border border-white/10 rounded-xl overflow-hidden">
+              <div className="bg-white/5 border-b border-white/10 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="h-5 w-5 text-neon-green" />
+                  <span className="font-semibold text-white">Example: Lakers vs Celtics</span>
+                  <Badge variant="arb" className="ml-auto">+2.3% ARB</Badge>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Arbitrage Detection</h3>
-                <p className="text-white/50">
-                  Find guaranteed profit opportunities across sportsbooks with 2-way and 3-way arbitrage detection.
-                </p>
               </div>
-            </div>
-
-            {/* Feature Card 2 */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-              <div className="relative bg-black border border-white/10 rounded-xl p-6 hover:border-neon-cyan/30 transition-colors">
-                <div className="w-12 h-12 rounded-lg bg-neon-cyan/10 flex items-center justify-center mb-4">
-                  <Target className="h-6 w-6 text-neon-cyan" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Middle Finder</h3>
-                <p className="text-white/50">
-                  Detect totals and spread middles where you can win both sides of a bet.
+              <div className="p-6 space-y-6">
+                <p className="text-white/60">
+                  Different sportsbooks have different odds. When the math works out, you can bet both sides and profit:
                 </p>
-              </div>
-            </div>
 
-            {/* Feature Card 3 */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-pink to-neon-orange rounded-xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-              <div className="relative bg-black border border-white/10 rounded-xl p-6 hover:border-neon-pink/30 transition-colors">
-                <div className="w-12 h-12 rounded-lg bg-neon-pink/10 flex items-center justify-center mb-4">
-                  <Bell className="h-6 w-6 text-neon-pink" />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-neon-green/5 border border-neon-green/20 rounded-lg p-4">
+                    <div className="text-sm text-white/40 mb-1">DraftKings</div>
+                    <div className="text-lg font-semibold text-white mb-2">Lakers to Win</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neon-green font-mono text-xl">+110</span>
+                      <span className="text-white/60">Bet: <span className="text-white font-mono">$47.62</span></span>
+                    </div>
+                  </div>
+                  <div className="bg-neon-cyan/5 border border-neon-cyan/20 rounded-lg p-4">
+                    <div className="text-sm text-white/40 mb-1">FanDuel</div>
+                    <div className="text-lg font-semibold text-white mb-2">Celtics to Win</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neon-cyan font-mono text-xl">+105</span>
+                      <span className="text-white/60">Bet: <span className="text-white font-mono">$52.38</span></span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Instant Alerts</h3>
-                <p className="text-white/50">
-                  Get notified via Discord, Telegram, or Email the moment an opportunity is detected.
-                </p>
-              </div>
-            </div>
 
-            {/* Feature Card 4 */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-purple to-neon-pink rounded-xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-              <div className="relative bg-black border border-white/10 rounded-xl p-6 hover:border-neon-purple/30 transition-colors">
-                <div className="w-12 h-12 rounded-lg bg-neon-purple/10 flex items-center justify-center mb-4">
-                  <Wallet className="h-6 w-6 text-neon-purple" />
+                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Calculator className="h-5 w-5 text-neon-purple" />
+                    <span className="font-semibold text-white">The Math</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between text-white/60">
+                      <span>Total Wagered:</span>
+                      <span className="text-white font-mono">$100.00</span>
+                    </div>
+                    <div className="flex justify-between text-white/60">
+                      <span>If Lakers Win (payout):</span>
+                      <span className="text-white font-mono">$102.30</span>
+                    </div>
+                    <div className="flex justify-between text-white/60">
+                      <span>If Celtics Win (payout):</span>
+                      <span className="text-white font-mono">$102.30</span>
+                    </div>
+                    <div className="border-t border-white/10 pt-2 flex justify-between">
+                      <span className="text-neon-green font-semibold">Guaranteed Profit:</span>
+                      <span className="text-neon-green font-mono font-bold">+$2.30 (2.3%)</span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Paper Trading</h3>
-                <p className="text-white/50">
-                  Practice with a virtual bankroll. Realistic latency and slippage simulation included.
-                </p>
-              </div>
-            </div>
 
-            {/* Feature Card 5 */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-yellow to-neon-green rounded-xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-              <div className="relative bg-black border border-white/10 rounded-xl p-6 hover:border-neon-yellow/30 transition-colors">
-                <div className="w-12 h-12 rounded-lg bg-neon-yellow/10 flex items-center justify-center mb-4">
-                  <Radio className="h-6 w-6 text-neon-yellow" />
+                <div className="flex items-start gap-3 text-sm text-white/50">
+                  <CheckCircle2 className="h-5 w-5 text-neon-green flex-shrink-0 mt-0.5" />
+                  <span>No matter who wins the game, you make $2.30 profit on your $100 investment. This is risk-free profit.</span>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Real-time Scanning</h3>
-                <p className="text-white/50">
-                  Continuous polling every 10 seconds to catch opportunities before lines move.
-                </p>
-              </div>
-            </div>
-
-            {/* Feature Card 6 */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-green to-neon-cyan rounded-xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-              <div className="relative bg-black border border-white/10 rounded-xl p-6 hover:border-neon-green/30 transition-colors">
-                <div className="w-12 h-12 rounded-lg bg-neon-green/10 flex items-center justify-center mb-4">
-                  <BarChart3 className="h-6 w-6 text-neon-green" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Stake Calculator</h3>
-                <p className="text-white/50">
-                  Automatic optimal stake sizing to lock in guaranteed profits on every arb.
-                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="relative py-24 px-4 border-t border-white/5">
-        <div className="container mx-auto max-w-4xl">
-          <h2 className="text-4xl font-bold text-center mb-16">
-            <span className="text-white">How It </span>
-            <span className="text-neon-purple">Works</span>
-          </h2>
+      {/* What are Middles Section */}
+      <section className="relative py-16 md:py-24 px-4 border-t border-white/5">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-12">
+            <Badge variant="middle" className="mb-4">MIDDLE</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <span className="text-white">What is a </span>
+              <span className="text-neon-cyan">Middle Bet?</span>
+            </h2>
+            <p className="text-white/50 max-w-2xl mx-auto">
+              A middle is when you bet on both sides of a spread or total, creating a &quot;window&quot;
+              where you could win BOTH bets if the final score lands in the middle.
+            </p>
+          </div>
 
-          <div className="space-y-12">
-            {[
-              { num: '01', title: 'Configure Your Preferences', desc: 'Set your minimum edge threshold, choose sports to scan, and connect your notification channel.', color: 'neon-green' },
-              { num: '02', title: 'Let the Scanner Work', desc: 'Our worker continuously polls odds from multiple sportsbooks, detecting arbitrage and middle opportunities.', color: 'neon-cyan' },
-              { num: '03', title: 'Get Alerted Instantly', desc: 'Receive notifications with full details including legs, odds, and suggested stake amounts.', color: 'neon-pink' },
-              { num: '04', title: 'Paper Trade or Go Live', desc: 'Practice with paper trading to track your performance, or place real bets with confidence.', color: 'neon-purple' },
-            ].map((step, i) => (
-              <div key={i} className="flex gap-8 items-start group">
-                <div className={`flex-shrink-0 w-16 h-16 rounded-2xl bg-${step.color}/10 border border-${step.color}/30 flex items-center justify-center font-mono text-2xl font-bold text-${step.color} group-hover:shadow-lg group-hover:shadow-${step.color}/20 transition-all`}>
-                  {step.num}
-                </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-white mb-2">{step.title}</h3>
-                  <p className="text-white/50 text-lg">{step.desc}</p>
+          {/* Middle Example */}
+          <div className="relative max-w-3xl mx-auto">
+            <div className="absolute -inset-1 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-20" />
+            <div className="relative bg-black border border-white/10 rounded-xl overflow-hidden">
+              <div className="bg-white/5 border-b border-white/10 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <Target className="h-5 w-5 text-neon-cyan" />
+                  <span className="font-semibold text-white">Example: Chiefs vs Bills (Spread)</span>
+                  <Badge variant="middle" className="ml-auto">3.5pt MIDDLE</Badge>
                 </div>
               </div>
-            ))}
+              <div className="p-6 space-y-6">
+                <p className="text-white/60">
+                  When different books have different point spreads, you can bet both sides and create a winning window:
+                </p>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-neon-cyan/5 border border-neon-cyan/20 rounded-lg p-4">
+                    <div className="text-sm text-white/40 mb-1">BetMGM</div>
+                    <div className="text-lg font-semibold text-white mb-2">Chiefs -3.5</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neon-cyan font-mono text-xl">-110</span>
+                      <span className="text-white/60">Bet: <span className="text-white font-mono">$50</span></span>
+                    </div>
+                  </div>
+                  <div className="bg-neon-purple/5 border border-neon-purple/20 rounded-lg p-4">
+                    <div className="text-sm text-white/40 mb-1">Caesars</div>
+                    <div className="text-lg font-semibold text-white mb-2">Bills +7</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neon-purple font-mono text-xl">-110</span>
+                      <span className="text-white/60">Bet: <span className="text-white font-mono">$50</span></span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visual Middle Diagram */}
+                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Scale className="h-5 w-5 text-neon-yellow" />
+                    <span className="font-semibold text-white">The Middle Window</span>
+                  </div>
+                  <div className="relative h-16 bg-black rounded-lg overflow-hidden">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full h-2 bg-white/10 relative">
+                        {/* Markers */}
+                        <div className="absolute left-[30%] -top-6 text-center transform -translate-x-1/2">
+                          <div className="text-xs text-neon-cyan font-mono">-3.5</div>
+                        </div>
+                        <div className="absolute left-[70%] -top-6 text-center transform -translate-x-1/2">
+                          <div className="text-xs text-neon-purple font-mono">+7</div>
+                        </div>
+                        {/* Middle zone */}
+                        <div className="absolute left-[30%] right-[30%] h-full bg-neon-green/50 rounded"></div>
+                        {/* Labels */}
+                        <div className="absolute left-[50%] top-4 transform -translate-x-1/2">
+                          <div className="text-xs text-neon-green font-semibold">WIN BOTH</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-white/50 mt-4">
+                    If Chiefs win by 4, 5, or 6 points, you win BOTH bets. Otherwise, you win one and lose one (small loss due to vig).
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-neon-green flex-shrink-0 mt-0.5" />
+                    <span className="text-white/60">Chiefs win by 4-6: <span className="text-neon-green">Win Both!</span></span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-neon-yellow flex-shrink-0 mt-0.5" />
+                    <span className="text-white/60">Other result: <span className="text-neon-yellow">Small loss (~$5)</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Dashboard Guide Section */}
+      <section id="dashboard-guide" className="relative py-16 md:py-24 px-4 border-t border-white/5">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <span className="text-white">Understanding the </span>
+              <span className="text-neon-purple">Dashboard</span>
+            </h2>
+            <p className="text-white/50 max-w-2xl mx-auto">
+              Here&apos;s what each column and metric means when you explore the opportunities.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Type */}
+            <div className="bg-white/5 border border-white/10 rounded-lg p-5 hover:border-white/20 transition-colors">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-neon-green/10 flex items-center justify-center">
+                  <Badge variant="arb" className="text-xs">ARB</Badge>
+                </div>
+                <h3 className="font-semibold text-white">Type</h3>
+              </div>
+              <p className="text-white/50 text-sm">
+                <span className="text-neon-green">ARB</span> = Guaranteed profit arbitrage.
+                <span className="text-neon-cyan"> MIDDLE</span> = Chance to win both sides with a gap in the spread/total.
+              </p>
+            </div>
+
+            {/* Edge % */}
+            <div className="bg-white/5 border border-white/10 rounded-lg p-5 hover:border-white/20 transition-colors">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-neon-green/10 flex items-center justify-center">
+                  <Percent className="h-5 w-5 text-neon-green" />
+                </div>
+                <h3 className="font-semibold text-white">Edge %</h3>
+              </div>
+              <p className="text-white/50 text-sm">
+                Your profit percentage on the total amount wagered. A 2.3% edge on $100 = $2.30 guaranteed profit.
+              </p>
+            </div>
+
+            {/* Width */}
+            <div className="bg-white/5 border border-white/10 rounded-lg p-5 hover:border-white/20 transition-colors">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-neon-cyan/10 flex items-center justify-center">
+                  <Scale className="h-5 w-5 text-neon-cyan" />
+                </div>
+                <h3 className="font-semibold text-white">Width (Middles Only)</h3>
+              </div>
+              <p className="text-white/50 text-sm">
+                The size of the &quot;middle window&quot; in points. A 3.5pt width means you have a 3.5 point range to win both bets.
+              </p>
+            </div>
+
+            {/* Market */}
+            <div className="bg-white/5 border border-white/10 rounded-lg p-5 hover:border-white/20 transition-colors">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-neon-purple/10 flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 text-neon-purple" />
+                </div>
+                <h3 className="font-semibold text-white">Market</h3>
+              </div>
+              <p className="text-white/50 text-sm">
+                <span className="text-white">Moneyline</span> = Who wins.
+                <span className="text-white"> Spreads</span> = Point handicap.
+                <span className="text-white"> Totals</span> = Over/under points.
+              </p>
+            </div>
+
+            {/* Stakes */}
+            <div className="bg-white/5 border border-white/10 rounded-lg p-5 hover:border-white/20 transition-colors">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-neon-yellow/10 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-neon-yellow" />
+                </div>
+                <h3 className="font-semibold text-white">Stakes</h3>
+              </div>
+              <p className="text-white/50 text-sm">
+                Click any opportunity to see the exact dollar amounts to bet on each side. Stakes are calculated for a $100 total wager.
+              </p>
+            </div>
+
+            {/* Time */}
+            <div className="bg-white/5 border border-white/10 rounded-lg p-5 hover:border-white/20 transition-colors">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-neon-pink/10 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-neon-pink" />
+                </div>
+                <h3 className="font-semibold text-white">Game Time</h3>
+              </div>
+              <p className="text-white/50 text-sm">
+                When the game starts. Opportunities can disappear quickly as odds adjust, so timing matters.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-24 px-4">
+      <section className="relative py-16 md:py-24 px-4 border-t border-white/5">
         <div className="container mx-auto text-center max-w-2xl">
           <div className="relative">
             <div className="absolute -inset-4 bg-gradient-to-r from-neon-green via-neon-cyan to-neon-purple rounded-3xl blur-2xl opacity-20" />
-            <div className="relative bg-black/80 border border-white/10 rounded-2xl p-12">
-              <h2 className="text-4xl font-bold text-white mb-4">Ready to Find Your Edge?</h2>
+            <div className="relative bg-black/80 border border-white/10 rounded-2xl p-8 md:p-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to Explore?</h2>
               <p className="text-white/50 mb-8 text-lg">
-                Join now and start scanning for opportunities. No credit card required.
+                Check out the live dashboard to see real opportunities with calculated stakes and edges.
               </p>
               <Button size="lg" asChild className="btn-neon bg-neon-green hover:bg-neon-green/90 text-black font-semibold text-lg px-8 h-14">
                 <Link href="/dashboard">
-                  Start Scanning Now <ArrowRight className="ml-2 h-5 w-5" />
+                  View Live Dashboard <ChevronRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
+              <p className="text-xs text-white/30 mt-6">
+                No account required. Dashboard updates every 15 seconds.
+              </p>
             </div>
           </div>
         </div>
@@ -320,8 +434,8 @@ export default async function LandingPage() {
               <span className="text-white/80">TRADER</span>
             </span>
           </div>
-          <p className="text-sm text-white/30">
-            For educational and research purposes only. Gamble responsibly.
+          <p className="text-sm text-white/30 text-center">
+            Demo project for educational purposes. Always gamble responsibly.
           </p>
         </div>
       </footer>

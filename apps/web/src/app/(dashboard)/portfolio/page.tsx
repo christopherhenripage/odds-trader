@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +48,7 @@ import {
   Target,
   Percent,
   RotateCcw,
+  Lock,
 } from 'lucide-react';
 import { PaperPositionStatus, OpportunityType } from '@prisma/client';
 
@@ -73,6 +76,7 @@ interface Position {
 }
 
 export default function PortfolioPage() {
+  const { data: session, status } = useSession();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,8 +86,12 @@ export default function PortfolioPage() {
   const [closeDialog, setCloseDialog] = useState<{ position: Position; payout: string } | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (status === 'authenticated') {
+      loadData();
+    } else if (status === 'unauthenticated') {
+      setLoading(false);
+    }
+  }, [status]);
 
   const loadData = async () => {
     try {
@@ -195,10 +203,32 @@ export default function PortfolioPage() {
     }
   };
 
-  if (loading) {
+  if (loading || status === 'loading') {
     return (
       <div className="flex items-center justify-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 space-y-6">
+        <div className="w-16 h-16 rounded-full bg-neon-purple/10 flex items-center justify-center">
+          <Lock className="h-8 w-8 text-neon-purple" />
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-white">Sign In Required</h2>
+          <p className="text-white/50 max-w-md">
+            Paper trading lets you practice betting strategies with virtual money.
+            Sign in to track your simulated trades and performance.
+          </p>
+        </div>
+        <Button asChild className="bg-neon-green hover:bg-neon-green/90 text-black font-semibold">
+          <Link href="/auth/signin">
+            Sign In to Start Paper Trading
+          </Link>
+        </Button>
       </div>
     );
   }

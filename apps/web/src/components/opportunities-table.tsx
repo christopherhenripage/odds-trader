@@ -21,8 +21,11 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { formatDate, formatPercent, formatOdds, formatCurrency } from '@/lib/utils';
-import { ExternalLink, RefreshCw } from 'lucide-react';
+import { ExternalLink, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { OpportunityType } from '@prisma/client';
+
+type SortColumn = 'type' | 'event' | 'market' | 'edge' | 'width' | 'time';
+type SortDirection = 'asc' | 'desc';
 import { addStakesToOpportunity, Opportunity as SharedOpportunity, MarketKey } from '@odds-trader/shared';
 
 interface OpportunityLeg {
@@ -57,6 +60,8 @@ export function OpportunitiesTable() {
   const [loading, setLoading] = useState(true);
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [sortColumn, setSortColumn] = useState<SortColumn>('edge');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const fetchOpportunities = useCallback(async () => {
     setLoading(true);
@@ -106,6 +111,51 @@ export function OpportunitiesTable() {
     }
   };
 
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection(column === 'edge' || column === 'width' ? 'desc' : 'asc');
+    }
+  };
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />;
+    }
+    return sortDirection === 'asc'
+      ? <ArrowUp className="ml-1 h-3 w-3 text-neon-green" />
+      : <ArrowDown className="ml-1 h-3 w-3 text-neon-green" />;
+  };
+
+  const sortedOpportunities = [...opportunities].sort((a, b) => {
+    let comparison = 0;
+
+    switch (sortColumn) {
+      case 'type':
+        comparison = a.type.localeCompare(b.type);
+        break;
+      case 'event':
+        comparison = `${a.homeTeam} vs ${a.awayTeam}`.localeCompare(`${b.homeTeam} vs ${b.awayTeam}`);
+        break;
+      case 'market':
+        comparison = a.marketKey.localeCompare(b.marketKey);
+        break;
+      case 'edge':
+        comparison = a.edgePct - b.edgePct;
+        break;
+      case 'width':
+        comparison = (a.middleWidth || 0) - (b.middleWidth || 0);
+        break;
+      case 'time':
+        comparison = new Date(a.commenceTime).getTime() - new Date(b.commenceTime).getTime();
+        break;
+    }
+
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
+
   if (loading && opportunities.length === 0) {
     return (
       <div className="h-96 flex items-center justify-center">
@@ -140,21 +190,63 @@ export function OpportunitiesTable() {
         </Button>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border border-white/10 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead>Market</TableHead>
-              <TableHead className="text-right">Edge</TableHead>
-              <TableHead className="text-right">Width</TableHead>
-              <TableHead>Time</TableHead>
+            <TableRow className="hover:bg-transparent border-white/10">
+              <TableHead
+                className="cursor-pointer select-none hover:text-white transition-colors"
+                onClick={() => handleSort('type')}
+              >
+                <div className="flex items-center">
+                  Type {getSortIcon('type')}
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none hover:text-white transition-colors"
+                onClick={() => handleSort('event')}
+              >
+                <div className="flex items-center">
+                  Event {getSortIcon('event')}
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none hover:text-white transition-colors"
+                onClick={() => handleSort('market')}
+              >
+                <div className="flex items-center">
+                  Market {getSortIcon('market')}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-right cursor-pointer select-none hover:text-white transition-colors"
+                onClick={() => handleSort('edge')}
+              >
+                <div className="flex items-center justify-end">
+                  Edge {getSortIcon('edge')}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-right cursor-pointer select-none hover:text-white transition-colors"
+                onClick={() => handleSort('width')}
+              >
+                <div className="flex items-center justify-end">
+                  Width {getSortIcon('width')}
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none hover:text-white transition-colors"
+                onClick={() => handleSort('time')}
+              >
+                <div className="flex items-center">
+                  Time {getSortIcon('time')}
+                </div>
+              </TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {opportunities.map((opp) => (
+            {sortedOpportunities.map((opp) => (
               <TableRow
                 key={opp.id}
                 className="cursor-pointer"
