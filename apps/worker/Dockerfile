@@ -1,7 +1,8 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
-# Install pnpm
+# Install pnpm and OpenSSL
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN npm install -g pnpm@8.15.0
 
 WORKDIR /app
@@ -34,10 +35,10 @@ RUN pnpm --filter @odds-trader/worker exec prisma generate
 RUN pnpm --filter @odds-trader/worker build
 
 # Production stage
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
-# Install pnpm for workspace dependency resolution
-RUN npm install -g pnpm@8.15.0
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

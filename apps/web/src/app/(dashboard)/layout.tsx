@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { DashboardNav } from '@/components/dashboard-nav';
@@ -10,10 +9,6 @@ export default async function DashboardLayout({
 }) {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
-    redirect('/auth/signin');
-  }
-
   return (
     <div className="min-h-screen bg-black relative">
       {/* Background effects */}
@@ -22,7 +17,7 @@ export default async function DashboardLayout({
       <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-neon-cyan/10 rounded-full blur-[150px] pointer-events-none" />
 
       <div className="relative">
-        <DashboardNav user={session.user} />
+        <DashboardNav user={session?.user || null} />
         <main className="container mx-auto px-4 py-8">{children}</main>
       </div>
     </div>

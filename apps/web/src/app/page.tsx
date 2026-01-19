@@ -45,17 +45,11 @@ export default async function LandingPage() {
             </span>
           </div>
           <nav className="flex items-center gap-4">
-            {session ? (
-              <Button asChild className="btn-neon bg-neon-green hover:bg-neon-green/90 text-black font-semibold">
-                <Link href="/dashboard">
-                  Launch App <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild className="btn-neon bg-neon-green hover:bg-neon-green/90 text-black font-semibold">
-                <Link href="/auth/signin">Sign In</Link>
-              </Button>
-            )}
+            <Button asChild className="btn-neon bg-neon-green hover:bg-neon-green/90 text-black font-semibold">
+              <Link href="/dashboard">
+                Launch App <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </nav>
         </div>
       </header>
@@ -97,8 +91,8 @@ export default async function LandingPage() {
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Button size="lg" asChild className="btn-neon bg-neon-green hover:bg-neon-green/90 text-black font-semibold text-lg px-8 h-14">
-              <Link href="/auth/signin">
-                Get Started Free <Sparkles className="ml-2 h-5 w-5" />
+              <Link href="/dashboard">
+                Start Scanning <Sparkles className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="border-white/20 hover:border-neon-cyan/50 hover:bg-neon-cyan/5 text-white h-14 px-8">
@@ -307,7 +301,7 @@ export default async function LandingPage() {
                 Join now and start scanning for opportunities. No credit card required.
               </p>
               <Button size="lg" asChild className="btn-neon bg-neon-green hover:bg-neon-green/90 text-black font-semibold text-lg px-8 h-14">
-                <Link href="/auth/signin">
+                <Link href="/dashboard">
                   Start Scanning Now <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>

@@ -29,7 +29,7 @@ interface DashboardNavProps {
     name?: string | null;
     email?: string | null;
     image?: string | null;
-  };
+  } | null;
 }
 
 const navItems = [
@@ -80,47 +80,55 @@ export function DashboardNav({ user }: DashboardNavProps) {
           </nav>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="gap-2 hover:bg-white/5 border border-transparent hover:border-white/10">
-              {user.image ? (
-                <img
-                  src={user.image}
-                  alt={user.name || 'User'}
-                  className="h-7 w-7 rounded-full ring-2 ring-neon-green/30"
-                />
-              ) : (
-                <div className="h-7 w-7 rounded-full bg-neon-purple/20 flex items-center justify-center">
-                  <User className="h-4 w-4 text-neon-purple" />
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="gap-2 hover:bg-white/5 border border-transparent hover:border-white/10">
+                {user.image ? (
+                  <img
+                    src={user.image}
+                    alt={user.name || 'User'}
+                    className="h-7 w-7 rounded-full ring-2 ring-neon-green/30"
+                  />
+                ) : (
+                  <div className="h-7 w-7 rounded-full bg-neon-purple/20 flex items-center justify-center">
+                    <User className="h-4 w-4 text-neon-purple" />
+                  </div>
+                )}
+                <span className="hidden sm:inline-block text-white/80">{user.name || user.email}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-black/95 border-white/10 backdrop-blur-xl">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium text-white">{user.name}</p>
+                  <p className="text-xs text-white/40">{user.email}</p>
                 </div>
-              )}
-              <span className="hidden sm:inline-block text-white/80">{user.name || user.email}</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuItem asChild className="focus:bg-white/5 focus:text-white">
+                <Link href="/settings/notifications">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuItem
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="focus:bg-red-500/10 focus:text-red-400"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link href="/auth/signin">
+            <Button className="bg-neon-green hover:bg-neon-green/90 text-black font-medium">
+              Sign In
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-black/95 border-white/10 backdrop-blur-xl">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium text-white">{user.name}</p>
-                <p className="text-xs text-white/40">{user.email}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-white/10" />
-            <DropdownMenuItem asChild className="focus:bg-white/5 focus:text-white">
-              <Link href="/settings/notifications">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-white/10" />
-            <DropdownMenuItem
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="focus:bg-red-500/10 focus:text-red-400"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </Link>
+        )}
       </div>
     </header>
   );
