@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "npx pnpm@8 install --no-frozen-lockfile",
-  "buildCommand": "npx pnpm@8 --filter @odds-trader/shared build && npx pnpm@8 --filter @odds-trader/web build",
+  "buildCommand": "npx pnpm@8 --filter @odds-trader/shared build && npx pnpm@8 --filter @odds-trader/web db:generate && npx pnpm@8 --filter @odds-trader/web build",
   "outputDirectory": "apps/web/.next"
 }
