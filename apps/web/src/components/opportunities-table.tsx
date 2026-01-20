@@ -21,12 +21,31 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { formatDate, formatPercent, formatOdds, formatCurrency } from '@/lib/utils';
-import { ExternalLink, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ExternalLink, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown, ShieldCheck, Dice5 } from 'lucide-react';
 import { OpportunityType } from '@prisma/client';
 
 type SortColumn = 'type' | 'event' | 'market' | 'edge' | 'width' | 'time';
 type SortDirection = 'asc' | 'desc';
 import { addStakesToOpportunity, Opportunity as SharedOpportunity, MarketKey } from '@odds-trader/shared';
+
+// Calculate risk/reward for middle bets
+function calculateMiddleRiskReward(legs: OpportunityLeg[], totalStake: number = 100) {
+  if (legs.length !== 2) return null;
+
+  const stakePerLeg = totalStake / 2;
+  const payout1 = stakePerLeg * legs[0].odds;
+  const payout2 = stakePerLeg * legs[1].odds;
+
+  // If middle misses: one wins, one loses
+  const payoutIfMiss = Math.max(payout1, payout2);
+  const risk = totalStake - payoutIfMiss;
+
+  // If middle hits: both win
+  const payoutIfHit = payout1 + payout2;
+  const reward = payoutIfHit - totalStake;
+
+  return { risk: Math.round(risk * 100) / 100, reward: Math.round(reward * 100) / 100 };
+}
 
 interface OpportunityLeg {
   outcome: string;
@@ -108,6 +127,30 @@ export function OpportunitiesTable() {
     return type === 'ARB' ? 'arb' : 'middle';
   };
 
+  const getTypeLabel = (type: OpportunityType) => {
+    return type === 'ARB' ? 'GUARANTEED' : 'SPECULATIVE';
+  };
+
+  const renderValueColumn = (opp: Opportunity) => {
+    if (opp.type === 'ARB') {
+      return (
+        <span className="text-emerald-400">
+          +{formatPercent(opp.edgePct)} profit
+        </span>
+      );
+    } else {
+      const riskReward = calculateMiddleRiskReward(opp.legs);
+      if (riskReward) {
+        return (
+          <span className="text-amber-400">
+            -${Math.abs(riskReward.risk).toFixed(0)} / +${riskReward.reward.toFixed(0)}
+          </span>
+        );
+      }
+      return <span className="text-muted-foreground">-</span>;
+    }
+  };
+
   const getMarketLabel = (market: string) => {
     switch (market) {
       case 'h2h':
@@ -157,12 +200,25 @@ export function OpportunitiesTable() {
       : <ArrowDown className="ml-1 h-3 w-3 text-neon-green" />;
   };
 
+  // Helper to get sortable value for an opportunity
+  const getSortValue = (opp: Opportunity): number => {
+    // For ARBs, use edgePct; for MIDDLEs, use middleWidth
+    if (opp.type === 'ARB') {
+      return opp.edgePct;
+    } else {
+      return opp.middleWidth || 0;
+    }
+  };
+
   const sortedOpportunities = [...opportunities].sort((a, b) => {
     let comparison = 0;
 
     switch (sortColumn) {
       case 'type':
-        comparison = a.type.localeCompare(b.type);
+        // Sort ARBs first (guaranteed), then MIDDLEs (speculative)
+        comparison = a.type === 'ARB' && b.type !== 'ARB' ? -1 :
+                     a.type !== 'ARB' && b.type === 'ARB' ? 1 :
+                     a.type.localeCompare(b.type);
         break;
       case 'event':
         comparison = `${a.homeTeam} vs ${a.awayTeam}`.localeCompare(`${b.homeTeam} vs ${b.awayTeam}`);
@@ -171,7 +227,15 @@ export function OpportunitiesTable() {
         comparison = a.marketKey.localeCompare(b.marketKey);
         break;
       case 'edge':
-        comparison = a.edgePct - b.edgePct;
+        // Sort by value: edgePct for ARBs, middleWidth for MIDDLEs
+        // ARBs always come first when sorting by value
+        if (a.type === 'ARB' && b.type !== 'ARB') {
+          comparison = 1; // ARBs have higher "value"
+        } else if (a.type !== 'ARB' && b.type === 'ARB') {
+          comparison = -1;
+        } else {
+          comparison = getSortValue(a) - getSortValue(b);
+        }
         break;
       case 'width':
         comparison = (a.middleWidth || 0) - (b.middleWidth || 0);
@@ -251,7 +315,7 @@ export function OpportunitiesTable() {
                 onClick={() => handleSort('edge')}
               >
                 <div className="flex items-center justify-end">
-                  Edge {getSortIcon('edge')}
+                  Value {getSortIcon('edge')}
                 </div>
               </TableHead>
               <TableHead
@@ -259,7 +323,7 @@ export function OpportunitiesTable() {
                 onClick={() => handleSort('width')}
               >
                 <div className="flex items-center justify-end">
-                  Width {getSortIcon('width')}
+                  Window {getSortIcon('width')}
                 </div>
               </TableHead>
               <TableHead
@@ -281,7 +345,18 @@ export function OpportunitiesTable() {
                 onClick={() => setSelectedOpp(opp)}
               >
                 <TableCell>
-                  <Badge variant={getTypeVariant(opp.type)}>{opp.type}</Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant={getTypeVariant(opp.type)} className="w-fit">
+                      {opp.type === 'ARB' ? (
+                        <><ShieldCheck className="h-3 w-3 mr-1" /> ARB</>
+                      ) : (
+                        <><Dice5 className="h-3 w-3 mr-1" /> MIDDLE</>
+                      )}
+                    </Badge>
+                    <span className={`text-[10px] ${opp.type === 'ARB' ? 'text-emerald-400/70' : 'text-amber-400/70'}`}>
+                      {getTypeLabel(opp.type)}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="font-medium">
@@ -293,16 +368,12 @@ export function OpportunitiesTable() {
                 </TableCell>
                 <TableCell>{getMarketLabel(opp.marketKey)}</TableCell>
                 <TableCell className="text-right font-mono">
-                  <span
-                    className={
-                      opp.edgePct > 0 ? 'text-emerald-400' : 'text-muted-foreground'
-                    }
-                  >
-                    {formatPercent(opp.edgePct)}
-                  </span>
+                  {renderValueColumn(opp)}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {opp.middleWidth ? opp.middleWidth.toFixed(1) : '-'}
+                  {opp.type === 'MIDDLE' && opp.middleWidth ? (
+                    <span className="text-cyan-400">{opp.middleWidth.toFixed(1)} pts</span>
+                  ) : '-'}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {formatDate(opp.commenceTime)}
@@ -334,24 +405,64 @@ export function OpportunitiesTable() {
               </DialogHeader>
 
               <div className="space-y-6">
+                {/* Type Explanation Banner */}
+                {selectedOpp.type === 'ARB' ? (
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <div className="flex items-center gap-2 text-emerald-400">
+                      <ShieldCheck className="h-4 w-4" />
+                      <span className="font-semibold">Guaranteed Profit</span>
+                    </div>
+                    <p className="text-sm text-emerald-400/70 mt-1">
+                      This is an arbitrage opportunity. You profit regardless of the outcome.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-center gap-2 text-amber-400">
+                      <Dice5 className="h-4 w-4" />
+                      <span className="font-semibold">Speculative Bet</span>
+                    </div>
+                    <p className="text-sm text-amber-400/70 mt-1">
+                      This is a middle bet. You have a small guaranteed loss UNLESS the final score lands in the window, then you win big.
+                    </p>
+                  </div>
+                )}
+
                 {/* Key Metrics */}
                 <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
-                  <div>
-                    <div className="text-sm text-muted-foreground">Edge</div>
-                    <div
-                      className={`text-xl font-bold ${
-                        selectedOpp.edgePct > 0
-                          ? 'text-emerald-400'
-                          : 'text-muted-foreground'
-                      }`}
-                    >
-                      {formatPercent(selectedOpp.edgePct)}
+                  {selectedOpp.type === 'ARB' ? (
+                    <div>
+                      <div className="text-sm text-muted-foreground">Guaranteed Profit</div>
+                      <div className="text-xl font-bold text-emerald-400">
+                        +{formatPercent(selectedOpp.edgePct)}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div>
+                        <div className="text-sm text-muted-foreground">If Miss (Risk)</div>
+                        <div className="text-xl font-bold text-red-400">
+                          {(() => {
+                            const rr = calculateMiddleRiskReward(selectedOpp.legs);
+                            return rr ? `-$${Math.abs(rr.risk).toFixed(2)}` : '-';
+                          })()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground">If Hit (Reward)</div>
+                        <div className="text-xl font-bold text-emerald-400">
+                          {(() => {
+                            const rr = calculateMiddleRiskReward(selectedOpp.legs);
+                            return rr ? `+$${rr.reward.toFixed(2)}` : '-';
+                          })()}
+                        </div>
+                      </div>
+                    </>
+                  )}
                   {selectedOpp.middleWidth && (
                     <div>
-                      <div className="text-sm text-muted-foreground">Width</div>
-                      <div className="text-xl font-bold text-blue-400">
+                      <div className="text-sm text-muted-foreground">Window</div>
+                      <div className="text-xl font-bold text-cyan-400">
                         {selectedOpp.middleWidth.toFixed(1)} pts
                       </div>
                     </div>
@@ -370,7 +481,15 @@ export function OpportunitiesTable() {
                   <LegTable opportunity={selectedOpp} totalStake={100} />
                 </div>
 
-                {/* Profit Calculation */}
+                {/* Outcome Scenarios for Middles */}
+                {selectedOpp.type === 'MIDDLE' && (
+                  <div className="space-y-3">
+                    <h4 className="font-semibold">Outcome Scenarios</h4>
+                    <MiddleOutcomeScenarios opportunity={selectedOpp} totalStake={100} />
+                  </div>
+                )}
+
+                {/* Profit Calculation for Arbs */}
                 {selectedOpp.type === 'ARB' && selectedOpp.edgePct > 0 && (
                   <div className="p-4 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
                     <div className="text-sm text-emerald-400 mb-1">
@@ -439,6 +558,146 @@ function LegTable({
           ))}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+function MiddleOutcomeScenarios({
+  opportunity,
+  totalStake,
+}: {
+  opportunity: Opportunity;
+  totalStake: number;
+}) {
+  const legs = opportunity.legs;
+  if (legs.length !== 2) return null;
+
+  const stakePerLeg = totalStake / 2;
+  const payout1 = stakePerLeg * legs[0].odds;
+  const payout2 = stakePerLeg * legs[1].odds;
+  const totalPayout = payout1 + payout2;
+
+  // Parse the points from outcomes for scenario descriptions
+  const point1 = legs[0].point;
+  const point2 = legs[1].point;
+
+  // Determine scenario labels based on market type
+  const isTotal = opportunity.marketKey === 'totals';
+  const isSpread = opportunity.marketKey === 'spreads';
+
+  let scenarios: Array<{ label: string; outcome: string; payout: number; profit: number; color: string }> = [];
+
+  if (isTotal && point1 !== undefined && point2 !== undefined) {
+    const lowPoint = Math.min(point1, point2);
+    const highPoint = Math.max(point1, point2);
+
+    scenarios = [
+      {
+        label: `Score is ${lowPoint} or less`,
+        outcome: 'Under wins, Over loses',
+        payout: payout2,
+        profit: payout2 - totalStake,
+        color: 'text-red-400',
+      },
+      {
+        label: `Score is ${lowPoint + 0.5} to ${highPoint - 0.5}`,
+        outcome: 'BOTH BETS WIN!',
+        payout: totalPayout,
+        profit: totalPayout - totalStake,
+        color: 'text-emerald-400',
+      },
+      {
+        label: `Score is ${highPoint} or more`,
+        outcome: 'Over wins, Under loses',
+        payout: payout1,
+        profit: payout1 - totalStake,
+        color: 'text-red-400',
+      },
+    ];
+  } else if (isSpread && point1 !== undefined && point2 !== undefined) {
+    // For spreads, the middle is the margin of victory range where both bets win
+    const homeSpread = point1; // Usually negative for favorite
+    const awaySpread = point2; // Usually positive for underdog
+
+    scenarios = [
+      {
+        label: `Home wins by more than ${Math.abs(homeSpread)}`,
+        outcome: 'Home spread wins, Away spread loses',
+        payout: payout1,
+        profit: payout1 - totalStake,
+        color: 'text-red-400',
+      },
+      {
+        label: `Home wins by ${Math.abs(homeSpread) + 0.5} to ${awaySpread - 0.5}`,
+        outcome: 'BOTH BETS WIN!',
+        payout: totalPayout,
+        profit: totalPayout - totalStake,
+        color: 'text-emerald-400',
+      },
+      {
+        label: `Home wins by less than ${awaySpread} (or loses)`,
+        outcome: 'Away spread wins, Home spread loses',
+        payout: payout2,
+        profit: payout2 - totalStake,
+        color: 'text-red-400',
+      },
+    ];
+  } else {
+    // Generic fallback
+    scenarios = [
+      {
+        label: 'First bet wins',
+        outcome: 'Leg 1 wins, Leg 2 loses',
+        payout: payout1,
+        profit: payout1 - totalStake,
+        color: 'text-red-400',
+      },
+      {
+        label: 'Middle hits',
+        outcome: 'BOTH BETS WIN!',
+        payout: totalPayout,
+        profit: totalPayout - totalStake,
+        color: 'text-emerald-400',
+      },
+      {
+        label: 'Second bet wins',
+        outcome: 'Leg 2 wins, Leg 1 loses',
+        payout: payout2,
+        profit: payout2 - totalStake,
+        color: 'text-red-400',
+      },
+    ];
+  }
+
+  return (
+    <div className="space-y-2">
+      {scenarios.map((scenario, idx) => (
+        <div
+          key={idx}
+          className={`p-3 rounded-lg border ${
+            scenario.profit > 0
+              ? 'bg-emerald-500/5 border-emerald-500/20'
+              : 'bg-red-500/5 border-red-500/20'
+          }`}
+        >
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="font-medium text-sm">{scenario.label}</div>
+              <div className={`text-xs ${scenario.profit > 0 ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
+                {scenario.outcome}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className={`font-bold font-mono ${scenario.color}`}>
+                {scenario.profit >= 0 ? '+' : ''}{formatCurrency(scenario.profit)}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Payout: {formatCurrency(scenario.payout)}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

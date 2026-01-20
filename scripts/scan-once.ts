@@ -325,8 +325,8 @@ function detectMiddles(event: Event): Opportunity[] {
       const middleWidth = awaySpread + homeSpread; // e.g., 5 + (-3) = 2
 
       if (middleWidth >= MIN_MIDDLE_WIDTH) {
-        // For middles, we don't calculate arbitrage edge
-        // Instead, middleWidth shows the window size where both bets win
+        // For middles, there's no guaranteed edge - it's speculative
+        // edgePct = 0 for middles, middleWidth shows the window size
         opportunities.push({
           eventId: event.id,
           sportKey: event.sport_key,
@@ -336,7 +336,7 @@ function detectMiddles(event: Event): Opportunity[] {
           awayTeam: event.away_team,
           type: 'MIDDLE',
           marketKey: 'spreads',
-          edgePct: middleWidth, // Show middle width as the "edge" indicator
+          edgePct: 0, // No guaranteed edge for middles
           middleWidth: Math.round(middleWidth * 10) / 10,
           legs: [
             {
@@ -389,6 +389,7 @@ function detectMiddles(event: Event): Opportunity[] {
       const middleWidth = under2.point - over1.point;
 
       if (middleWidth >= MIN_MIDDLE_WIDTH) {
+        // For middles, there's no guaranteed edge - it's speculative
         opportunities.push({
           eventId: event.id,
           sportKey: event.sport_key,
@@ -398,7 +399,7 @@ function detectMiddles(event: Event): Opportunity[] {
           awayTeam: event.away_team,
           type: 'MIDDLE',
           marketKey: 'totals',
-          edgePct: middleWidth, // Show middle width as the "edge" indicator
+          edgePct: 0, // No guaranteed edge for middles
           middleWidth: Math.round(middleWidth * 10) / 10,
           legs: [
             {
@@ -486,9 +487,19 @@ async function main() {
     const uniqueOpps = new Map<string, Opportunity>();
     for (const opp of allOpportunities) {
       const eventKey = generateEventKey(opp);
-      // Keep the one with the higher edge/width
-      if (!uniqueOpps.has(eventKey) || opp.edgePct > (uniqueOpps.get(eventKey)?.edgePct || 0)) {
+      const existing = uniqueOpps.get(eventKey);
+
+      if (!existing) {
         uniqueOpps.set(eventKey, opp);
+      } else {
+        // For ARBs, compare by edgePct; for MIDDLEs, compare by middleWidth
+        const isBetter = opp.type === 'ARB'
+          ? opp.edgePct > existing.edgePct
+          : (opp.middleWidth || 0) > (existing.middleWidth || 0);
+
+        if (isBetter) {
+          uniqueOpps.set(eventKey, opp);
+        }
       }
     }
 
