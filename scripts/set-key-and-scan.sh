@@ -8,6 +8,7 @@ if [ -z "$1" ]; then
   echo "Regions:"
   echo "  us - United States (DraftKings, FanDuel, BetMGM, Caesars)"
   echo "  au - Australia (TAB, Sportsbet, Ladbrokes, Neds, PointsBet)"
+  echo "  nz - New Zealand (Uses AU bookmakers - TAB NZ, Sportsbet, Ladbrokes)"
   echo "  uk - United Kingdom (Bet365, William Hill, Paddy Power)"
   echo "  eu - Europe (Pinnacle, Unibet, 888sport)"
   echo ""

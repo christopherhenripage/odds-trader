@@ -112,6 +112,8 @@ export function OpportunitiesTable() {
     switch (market) {
       case 'h2h':
         return 'Moneyline';
+      case 'h2h_3way':
+        return 'Moneyline (3-Way)';
       case 'totals':
         return 'Totals';
       case 'spreads':
@@ -119,6 +121,22 @@ export function OpportunitiesTable() {
       default:
         return market;
     }
+  };
+
+  const getSportLabel = (sport: string) => {
+    const labels: Record<string, string> = {
+      'basketball_nba': 'NBA Basketball',
+      'icehockey_nhl': 'NHL Hockey',
+      'americanfootball_nfl': 'NFL Football',
+      'baseball_mlb': 'MLB Baseball',
+      'aussierules_afl': 'AFL Football',
+      'rugbyleague_nrl': 'NRL Rugby',
+      'soccer_epl': 'Premier League',
+      'soccer_uefa_champs_league': 'Champions League',
+      'tennis_atp_aus_open': 'Australian Open',
+      'basketball_euroleague': 'Euroleague',
+    };
+    return labels[sport] || sport;
   };
 
   const handleSort = (column: SortColumn) => {
@@ -270,7 +288,7 @@ export function OpportunitiesTable() {
                     {opp.homeTeam} vs {opp.awayTeam}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {opp.sportKey}
+                    {getSportLabel(opp.sportKey)}
                   </div>
                 </TableCell>
                 <TableCell>{getMarketLabel(opp.marketKey)}</TableCell>

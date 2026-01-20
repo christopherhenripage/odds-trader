@@ -11,10 +11,11 @@ import {
 import { Globe } from 'lucide-react';
 
 export const REGIONS = {
-  us: { label: 'United States', flag: '🇺🇸', bookmakers: 'DraftKings, FanDuel, BetMGM, Caesars' },
-  au: { label: 'Australia', flag: '🇦🇺', bookmakers: 'TAB, Sportsbet, Ladbrokes, Neds, PointsBet' },
-  uk: { label: 'United Kingdom', flag: '🇬🇧', bookmakers: 'Bet365, William Hill, Paddy Power, Sky Bet' },
-  eu: { label: 'Europe', flag: '🇪🇺', bookmakers: 'Pinnacle, Unibet, 888sport, Betsson' },
+  us: { label: 'United States', flag: '🇺🇸', bookmakers: 'DraftKings, FanDuel, BetMGM, Caesars', apiRegion: 'us' },
+  au: { label: 'Australia', flag: '🇦🇺', bookmakers: 'TAB, Sportsbet, Ladbrokes, Neds, PointsBet', apiRegion: 'au' },
+  nz: { label: 'New Zealand', flag: '🇳🇿', bookmakers: 'TAB NZ, Sportsbet, Ladbrokes (via AU books)', apiRegion: 'au' },
+  uk: { label: 'United Kingdom', flag: '🇬🇧', bookmakers: 'Bet365, William Hill, Paddy Power, Sky Bet', apiRegion: 'uk' },
+  eu: { label: 'Europe', flag: '🇪🇺', bookmakers: 'Pinnacle, Unibet, 888sport, Betsson', apiRegion: 'eu' },
 } as const;
 
 export type RegionCode = keyof typeof REGIONS;
@@ -75,3 +76,18 @@ export function getStoredRegion(): RegionCode {
   const saved = localStorage.getItem('odds-trader-region') as RegionCode;
   return saved && REGIONS[saved] ? saved : 'us';
 }
+
+export function getApiRegion(region: RegionCode): string {
+  return REGIONS[region].apiRegion;
+}
+
+// NZ-specific information for users
+export const NZ_NOTICE = {
+  title: 'New Zealand Users',
+  description: 'We use Australian bookmaker odds since many AU bookmakers (TAB, Sportsbet, Ladbrokes) also operate in NZ. Sports include NRL, Super Rugby, NBA, and Premier League.',
+  bookmakers: [
+    { name: 'TAB NZ', url: 'https://www.tab.co.nz', note: 'Official NZ betting operator' },
+    { name: 'Sportsbet', url: 'https://www.sportsbet.com.au', note: 'Available via AU' },
+    { name: 'Ladbrokes', url: 'https://www.ladbrokes.com.au', note: 'Available via AU' },
+  ],
+};

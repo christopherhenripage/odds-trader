@@ -14,6 +14,11 @@ const REGIONS = {
     name: 'Australia',
     sports: ['aussierules_afl', 'rugbyleague_nrl', 'basketball_nba', 'soccer_epl'],
   },
+  nz: {
+    code: 'au', // NZ uses AU bookmakers (many operate in both countries)
+    name: 'New Zealand',
+    sports: ['rugbyleague_nrl', 'rugbyunion_super_rugby', 'basketball_nba', 'soccer_epl'],
+  },
   uk: {
     code: 'uk',
     name: 'United Kingdom',
@@ -422,7 +427,13 @@ function detectMiddles(event: Event): Opportunity[] {
 }
 
 function generateFingerprint(opp: Opportunity): string {
+  // Include bookmaker details in fingerprint for database uniqueness
   return `${opp.eventId}::${opp.type}::${opp.marketKey}::${opp.legs.map(l => `${l.bookmaker}:${l.outcome}`).sort().join('|')}`;
+}
+
+function generateEventKey(opp: Opportunity): string {
+  // For deduplication: one opportunity per event/market/type
+  return `${opp.eventId}::${opp.type}::${opp.marketKey}`;
 }
 
 async function main() {
@@ -471,13 +482,13 @@ async function main() {
   if (allOpportunities.length > 0) {
     console.log('Saving to database...');
 
-    // Deduplicate by fingerprint before saving
+    // Deduplicate by event/market/type - keep only the BEST opportunity for each
     const uniqueOpps = new Map<string, Opportunity>();
     for (const opp of allOpportunities) {
-      const fp = generateFingerprint(opp);
-      // Keep the one with the higher edge
-      if (!uniqueOpps.has(fp) || opp.edgePct > (uniqueOpps.get(fp)?.edgePct || 0)) {
-        uniqueOpps.set(fp, opp);
+      const eventKey = generateEventKey(opp);
+      // Keep the one with the higher edge/width
+      if (!uniqueOpps.has(eventKey) || opp.edgePct > (uniqueOpps.get(eventKey)?.edgePct || 0)) {
+        uniqueOpps.set(eventKey, opp);
       }
     }
 

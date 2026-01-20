@@ -13,6 +13,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getUniqueSports } from '@/lib/actions/opportunities';
 
+const SPORT_LABELS: Record<string, string> = {
+  'basketball_nba': 'NBA Basketball',
+  'icehockey_nhl': 'NHL Hockey',
+  'americanfootball_nfl': 'NFL Football',
+  'baseball_mlb': 'MLB Baseball',
+  'aussierules_afl': 'AFL Football',
+  'rugbyleague_nrl': 'NRL Rugby League',
+  'rugbyunion_super_rugby': 'Super Rugby',
+  'soccer_epl': 'Premier League',
+  'soccer_uefa_champs_league': 'Champions League',
+  'tennis_atp_aus_open': 'Australian Open',
+  'basketball_euroleague': 'Euroleague',
+};
+
 export function OpportunitiesFilter() {
   const router = useRouter();
   const pathname = usePathname();
@@ -73,7 +87,7 @@ export function OpportunitiesFilter() {
             <SelectItem value="all">All Sports</SelectItem>
             {sports.map((sport) => (
               <SelectItem key={sport} value={sport}>
-                {sport}
+                {SPORT_LABELS[sport] || sport}
               </SelectItem>
             ))}
           </SelectContent>
@@ -92,6 +106,7 @@ export function OpportunitiesFilter() {
           <SelectContent>
             <SelectItem value="all">All Markets</SelectItem>
             <SelectItem value="h2h">Moneyline</SelectItem>
+            <SelectItem value="h2h_3way">Moneyline (3-Way)</SelectItem>
             <SelectItem value="totals">Totals</SelectItem>
             <SelectItem value="spreads">Spreads</SelectItem>
           </SelectContent>
