@@ -39,13 +39,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       count: opportunities.length,
       opportunities: opportunities.map(opp => ({
-        id: opp.id,
-        homeTeam: opp.homeTeam,
-        awayTeam: opp.awayTeam,
-        type: opp.type,
-        edgePct: opp.edgePct,
-        marketKey: opp.marketKey,
-        legs: opp.legs,
+        ...opp,
+        legs: opp.legs as unknown as Array<{
+          outcome: string;
+          bookmaker: string;
+          bookmakerTitle: string;
+          odds: number;
+          point?: number;
+          stake?: number;
+        }>,
       })),
     });
   } catch (error) {
