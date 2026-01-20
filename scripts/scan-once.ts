@@ -2,14 +2,37 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Configuration
-const SPORTS_TO_SCAN = [
-  'basketball_nba',
-  'icehockey_nhl',
-];
+// Region configuration
+const REGIONS = {
+  us: {
+    code: 'us',
+    name: 'United States',
+    sports: ['basketball_nba', 'icehockey_nhl', 'americanfootball_nfl', 'baseball_mlb'],
+  },
+  au: {
+    code: 'au',
+    name: 'Australia',
+    sports: ['aussierules_afl', 'rugbyleague_nrl', 'basketball_nba', 'soccer_epl'],
+  },
+  uk: {
+    code: 'uk',
+    name: 'United Kingdom',
+    sports: ['soccer_epl', 'soccer_uefa_champs_league', 'tennis_atp_aus_open', 'basketball_nba'],
+  },
+  eu: {
+    code: 'eu',
+    name: 'Europe',
+    sports: ['soccer_epl', 'soccer_uefa_champs_league', 'basketball_euroleague', 'tennis_atp_aus_open'],
+  },
+};
+
+// Get region from command line argument or default to 'us'
+const regionArg = process.argv[2] || 'us';
+const REGION = REGIONS[regionArg as keyof typeof REGIONS] || REGIONS.us;
+const SPORTS_TO_SCAN = REGION.sports;
 
 const MARKETS = ['h2h', 'spreads', 'totals'];
-const API_KEY = process.env.ODDS_API_KEY || '08ac8d4604a82632f9758b002f6efc3a';
+const API_KEY = process.env.ODDS_API_KEY || '1b48e5acc4ea9563cacc5a0892898868';
 const API_BASE = 'https://api.the-odds-api.com/v4';
 
 if (!process.env.ODDS_API_KEY) {
@@ -73,7 +96,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function fetchOdds(sportKey: string): Promise<Event[]> {
-  const url = `${API_BASE}/sports/${sportKey}/odds?apiKey=${API_KEY}&regions=us&markets=${MARKETS.join(',')}&oddsFormat=decimal`;
+  const url = `${API_BASE}/sports/${sportKey}/odds?apiKey=${API_KEY}&regions=${REGION.code}&markets=${MARKETS.join(',')}&oddsFormat=decimal`;
 
   // Add delay to avoid rate limiting
   await sleep(3000);
@@ -328,7 +351,9 @@ async function main() {
   console.log('===========================================');
   console.log('    LIVE ODDS SCAN (Free Tier Friendly)');
   console.log('===========================================');
-  console.log(`Scanning ${SPORTS_TO_SCAN.length} sports (uses 5 API credits)...`);
+  console.log(`Region: ${REGION.name} (${REGION.code})`);
+  console.log(`Scanning ${SPORTS_TO_SCAN.length} sports...`);
+  console.log(`Sports: ${SPORTS_TO_SCAN.join(', ')}`);
   console.log('===========================================\n');
 
   // Clear old data
@@ -368,9 +393,27 @@ async function main() {
   if (allOpportunities.length > 0) {
     console.log('Saving to database...');
 
+    // Deduplicate by fingerprint before saving
+    const uniqueOpps = new Map<string, Opportunity>();
     for (const opp of allOpportunities) {
-      await prisma.opportunity.create({
-        data: {
+      const fp = generateFingerprint(opp);
+      // Keep the one with the higher edge
+      if (!uniqueOpps.has(fp) || opp.edgePct > (uniqueOpps.get(fp)?.edgePct || 0)) {
+        uniqueOpps.set(fp, opp);
+      }
+    }
+
+    console.log(`Deduped to ${uniqueOpps.size} unique opportunities`);
+
+    for (const opp of uniqueOpps.values()) {
+      await prisma.opportunity.upsert({
+        where: { fingerprint: generateFingerprint(opp) },
+        update: {
+          edgePct: opp.edgePct,
+          middleWidth: opp.middleWidth,
+          legs: opp.legs,
+        },
+        create: {
           fingerprint: generateFingerprint(opp),
           eventId: opp.eventId,
           sportKey: opp.sportKey,
@@ -387,7 +430,7 @@ async function main() {
       });
     }
 
-    console.log(`Saved ${allOpportunities.length} opportunities to database`);
+    console.log(`Saved ${uniqueOpps.size} opportunities to database`);
   } else {
     console.log('\nNo arbitrage opportunities found at this moment.');
     console.log('This is NORMAL - real arbs are rare because markets are efficient.');

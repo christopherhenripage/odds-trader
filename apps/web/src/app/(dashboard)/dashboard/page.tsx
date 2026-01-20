@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OpportunitiesTable } from '@/components/opportunities-table';
 import { OpportunitiesFilter } from '@/components/opportunities-filter';
+import { DashboardHeader } from '@/components/dashboard-header';
 import { TrendingUp, Target, Activity, Clock, Zap } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -16,23 +17,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-4xl font-bold text-white">Dashboard</h1>
-          <p className="text-white/50 mt-1">
-            Real-time arbitrage and middle opportunities
-          </p>
-        </div>
-        <div className="flex items-center gap-3 px-4 py-2 rounded-full border border-neon-green/30 bg-neon-green/5">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
-          </span>
-          <span className="text-sm text-neon-green font-mono">LIVE</span>
-          <span className="text-xs text-white/40">Auto-refresh 15s</span>
-        </div>
-      </div>
+      {/* Header with Region Selector */}
+      <DashboardHeader />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
