@@ -117,7 +117,7 @@ async function fetchOdds(sportKey: string): Promise<Event[]> {
 function detectArbitrages(event: Event): Opportunity[] {
   const opportunities: Opportunity[] = [];
 
-  // For h2h market, check for arbitrage across bookmakers
+  // Collect all bookmaker odds for h2h market
   const h2hBooks: Map<string, { bookmaker: Bookmaker; outcomes: Map<string, Outcome> }> = new Map();
 
   for (const bm of event.bookmakers) {
@@ -131,70 +131,145 @@ function detectArbitrages(event: Event): Opportunity[] {
     h2hBooks.set(bm.key, { bookmaker: bm, outcomes });
   }
 
-  // Check all pairs of bookmakers
-  const bookKeys = Array.from(h2hBooks.keys());
+  if (h2hBooks.size < 2) return opportunities;
 
-  for (let i = 0; i < bookKeys.length; i++) {
-    for (let j = i + 1; j < bookKeys.length; j++) {
-      const book1 = h2hBooks.get(bookKeys[i])!;
-      const book2 = h2hBooks.get(bookKeys[j])!;
+  // Check if this is a 3-way market (soccer) by looking for Draw outcome
+  const firstBook = h2hBooks.values().next().value;
+  const hasDrawOutcome = firstBook?.outcomes.has('Draw');
 
-      // Get best odds for each outcome across both books
-      const team1 = event.home_team;
-      const team2 = event.away_team;
+  if (hasDrawOutcome) {
+    // 3-WAY ARBITRAGE (Soccer)
+    // Need to cover all 3 outcomes: Home, Draw, Away
+    // Find best odds for each outcome across ALL bookmakers
+    let bestHome = { odds: 0, book: null as typeof firstBook | null };
+    let bestDraw = { odds: 0, book: null as typeof firstBook | null };
+    let bestAway = { odds: 0, book: null as typeof firstBook | null };
 
-      const odds1_book1 = book1.outcomes.get(team1)?.price || 0;
-      const odds1_book2 = book2.outcomes.get(team1)?.price || 0;
-      const odds2_book1 = book1.outcomes.get(team2)?.price || 0;
-      const odds2_book2 = book2.outcomes.get(team2)?.price || 0;
+    for (const [, book] of h2hBooks) {
+      const homeOdds = book.outcomes.get(event.home_team)?.price || 0;
+      const drawOdds = book.outcomes.get('Draw')?.price || 0;
+      const awayOdds = book.outcomes.get(event.away_team)?.price || 0;
 
-      // Best odds for each team
-      const best1 = Math.max(odds1_book1, odds1_book2);
-      const best2 = Math.max(odds2_book1, odds2_book2);
-      const best1Book = odds1_book1 >= odds1_book2 ? book1 : book2;
-      const best2Book = odds2_book1 >= odds2_book2 ? book1 : book2;
+      if (homeOdds > bestHome.odds) {
+        bestHome = { odds: homeOdds, book };
+      }
+      if (drawOdds > bestDraw.odds) {
+        bestDraw = { odds: drawOdds, book };
+      }
+      if (awayOdds > bestAway.odds) {
+        bestAway = { odds: awayOdds, book };
+      }
+    }
 
-      if (best1 > 0 && best2 > 0) {
-        // Check for arbitrage: 1/odds1 + 1/odds2 < 1
-        const impliedProb = (1 / best1) + (1 / best2);
+    if (bestHome.odds > 0 && bestDraw.odds > 0 && bestAway.odds > 0 && bestHome.book && bestDraw.book && bestAway.book) {
+      // 3-way arbitrage: 1/home + 1/draw + 1/away < 1
+      const impliedProb = (1 / bestHome.odds) + (1 / bestDraw.odds) + (1 / bestAway.odds);
 
-        if (impliedProb < 1) {
-          const edgePct = ((1 / impliedProb) - 1) * 100;
+      if (impliedProb < 1) {
+        const edgePct = ((1 / impliedProb) - 1) * 100;
 
-          if (edgePct >= MIN_EDGE) {
-            const totalStake = 100;
-            const stake1 = totalStake * (1 / best1) / impliedProb;
-            const stake2 = totalStake * (1 / best2) / impliedProb;
+        if (edgePct >= MIN_EDGE) {
+          const totalStake = 100;
+          const stakeHome = totalStake * (1 / bestHome.odds) / impliedProb;
+          const stakeDraw = totalStake * (1 / bestDraw.odds) / impliedProb;
+          const stakeAway = totalStake * (1 / bestAway.odds) / impliedProb;
 
-            opportunities.push({
-              eventId: event.id,
-              sportKey: event.sport_key,
-              sportTitle: event.sport_title,
-              commenceTime: new Date(event.commence_time),
-              homeTeam: event.home_team,
-              awayTeam: event.away_team,
-              type: 'ARB',
-              marketKey: 'h2h',
-              edgePct: Math.round(edgePct * 100) / 100,
-              middleWidth: null,
-              legs: [
-                {
-                  outcome: team1,
-                  bookmaker: best1Book.bookmaker.key,
-                  bookmakerTitle: best1Book.bookmaker.title,
-                  odds: best1,
-                  stake: Math.round(stake1 * 100) / 100,
-                },
-                {
-                  outcome: team2,
-                  bookmaker: best2Book.bookmaker.key,
-                  bookmakerTitle: best2Book.bookmaker.title,
-                  odds: best2,
-                  stake: Math.round(stake2 * 100) / 100,
-                },
-              ],
-            });
-          }
+          opportunities.push({
+            eventId: event.id,
+            sportKey: event.sport_key,
+            sportTitle: event.sport_title,
+            commenceTime: new Date(event.commence_time),
+            homeTeam: event.home_team,
+            awayTeam: event.away_team,
+            type: 'ARB',
+            marketKey: 'h2h_3way',
+            edgePct: Math.round(edgePct * 100) / 100,
+            middleWidth: null,
+            legs: [
+              {
+                outcome: event.home_team,
+                bookmaker: bestHome.book.bookmaker.key,
+                bookmakerTitle: bestHome.book.bookmaker.title,
+                odds: bestHome.odds,
+                stake: Math.round(stakeHome * 100) / 100,
+              },
+              {
+                outcome: 'Draw',
+                bookmaker: bestDraw.book.bookmaker.key,
+                bookmakerTitle: bestDraw.book.bookmaker.title,
+                odds: bestDraw.odds,
+                stake: Math.round(stakeDraw * 100) / 100,
+              },
+              {
+                outcome: event.away_team,
+                bookmaker: bestAway.book.bookmaker.key,
+                bookmakerTitle: bestAway.book.bookmaker.title,
+                odds: bestAway.odds,
+                stake: Math.round(stakeAway * 100) / 100,
+              },
+            ],
+          });
+        }
+      }
+    }
+  } else {
+    // 2-WAY ARBITRAGE (Basketball, NFL, NHL, etc.)
+    // Find best odds for each outcome across ALL bookmakers
+    let bestHome = { odds: 0, book: null as typeof firstBook | null };
+    let bestAway = { odds: 0, book: null as typeof firstBook | null };
+
+    for (const [, book] of h2hBooks) {
+      const homeOdds = book.outcomes.get(event.home_team)?.price || 0;
+      const awayOdds = book.outcomes.get(event.away_team)?.price || 0;
+
+      if (homeOdds > bestHome.odds) {
+        bestHome = { odds: homeOdds, book };
+      }
+      if (awayOdds > bestAway.odds) {
+        bestAway = { odds: awayOdds, book };
+      }
+    }
+
+    if (bestHome.odds > 0 && bestAway.odds > 0 && bestHome.book && bestAway.book) {
+      // 2-way arbitrage: 1/home + 1/away < 1
+      const impliedProb = (1 / bestHome.odds) + (1 / bestAway.odds);
+
+      if (impliedProb < 1) {
+        const edgePct = ((1 / impliedProb) - 1) * 100;
+
+        if (edgePct >= MIN_EDGE) {
+          const totalStake = 100;
+          const stakeHome = totalStake * (1 / bestHome.odds) / impliedProb;
+          const stakeAway = totalStake * (1 / bestAway.odds) / impliedProb;
+
+          opportunities.push({
+            eventId: event.id,
+            sportKey: event.sport_key,
+            sportTitle: event.sport_title,
+            commenceTime: new Date(event.commence_time),
+            homeTeam: event.home_team,
+            awayTeam: event.away_team,
+            type: 'ARB',
+            marketKey: 'h2h',
+            edgePct: Math.round(edgePct * 100) / 100,
+            middleWidth: null,
+            legs: [
+              {
+                outcome: event.home_team,
+                bookmaker: bestHome.book.bookmaker.key,
+                bookmakerTitle: bestHome.book.bookmaker.title,
+                odds: bestHome.odds,
+                stake: Math.round(stakeHome * 100) / 100,
+              },
+              {
+                outcome: event.away_team,
+                bookmaker: bestAway.book.bookmaker.key,
+                bookmakerTitle: bestAway.book.bookmaker.title,
+                odds: bestAway.odds,
+                stake: Math.round(stakeAway * 100) / 100,
+              },
+            ],
+          });
         }
       }
     }
