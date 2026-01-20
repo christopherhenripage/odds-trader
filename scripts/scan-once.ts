@@ -39,7 +39,7 @@ if (!process.env.ODDS_API_KEY) {
   console.log('⚠️  No ODDS_API_KEY in environment, using default key');
 }
 const MIN_EDGE = 0.3;
-const MIN_MIDDLE_WIDTH = 0.5;
+const MIN_MIDDLE_WIDTH = 1.5; // Require at least 1.5 points of middle room
 
 interface Outcome {
   name: string;
@@ -282,6 +282,9 @@ function detectMiddles(event: Event): Opportunity[] {
   const opportunities: Opportunity[] = [];
 
   // Check spreads for middles
+  // A spread middle occurs when you can bet both sides and have a window where both win
+  // Example: Home -3 at Book1, Away +5 at Book2
+  // If home wins by 4, BOTH bets win (Home covered -3, Away covered +5)
   const spreadBooks: Map<string, { bookmaker: Bookmaker; outcomes: Outcome[] }> = new Map();
 
   for (const bm of event.bookmakers) {
@@ -290,7 +293,6 @@ function detectMiddles(event: Event): Opportunity[] {
     spreadBooks.set(bm.key, { bookmaker: bm, outcomes: spreadMarket.outcomes });
   }
 
-  // Check all pairs for middle opportunities
   const bookKeys = Array.from(spreadBooks.keys());
 
   for (let i = 0; i < bookKeys.length; i++) {
@@ -298,25 +300,28 @@ function detectMiddles(event: Event): Opportunity[] {
       const book1 = spreadBooks.get(bookKeys[i])!;
       const book2 = spreadBooks.get(bookKeys[j])!;
 
-      // Find home team spread in each book
       const home1 = book1.outcomes.find(o => o.name === event.home_team);
-      const home2 = book2.outcomes.find(o => o.name === event.home_team);
-      const away1 = book1.outcomes.find(o => o.name === event.away_team);
       const away2 = book2.outcomes.find(o => o.name === event.away_team);
 
-      if (!home1?.point || !home2?.point || !away1?.point || !away2?.point) continue;
+      if (!home1?.point || !away2?.point) continue;
 
-      // Middle exists when: book1 home spread < book2 away spread (or vice versa)
-      // e.g., Home -3.5 at book1, Away +7 at book2 = middle of 3.5 points
-      const middleWidth = Math.abs(home1.point) < Math.abs(away2.point)
-        ? Math.abs(away2.point) - Math.abs(home1.point)
-        : Math.abs(away1.point) - Math.abs(home2.point);
+      // For a middle to exist:
+      // Home spread (negative means favorite): e.g., -3.5
+      // Away spread (positive means underdog): e.g., +5.5
+      // Middle width = away2.point - Math.abs(home1.point)
+      // If home1.point = -3.5 and away2.point = +5.5, middle = 5.5 - 3.5 = 2 points
+      // Margin of victory between 4 and 5 wins both bets
+
+      const homeSpread = home1.point; // Usually negative for favorite
+      const awaySpread = away2.point; // Usually positive for underdog
+
+      // Middle exists when away spread > abs(home spread)
+      // e.g., Home -3 and Away +5 creates a 2-point middle
+      const middleWidth = awaySpread + homeSpread; // e.g., 5 + (-3) = 2
 
       if (middleWidth >= MIN_MIDDLE_WIDTH) {
-        // Calculate edge (simplified - assumes equal juice)
-        const impliedProb = (1 / home1.price) + (1 / away2.price);
-        const edgePct = Math.max(0, ((1 / impliedProb) - 1) * 100);
-
+        // For middles, we don't calculate arbitrage edge
+        // Instead, middleWidth shows the window size where both bets win
         opportunities.push({
           eventId: event.id,
           sportKey: event.sport_key,
@@ -326,11 +331,11 @@ function detectMiddles(event: Event): Opportunity[] {
           awayTeam: event.away_team,
           type: 'MIDDLE',
           marketKey: 'spreads',
-          edgePct: Math.round(edgePct * 100) / 100,
+          edgePct: middleWidth, // Show middle width as the "edge" indicator
           middleWidth: Math.round(middleWidth * 10) / 10,
           legs: [
             {
-              outcome: event.home_team,
+              outcome: `${event.home_team} ${homeSpread > 0 ? '+' : ''}${homeSpread}`,
               bookmaker: book1.bookmaker.key,
               bookmakerTitle: book1.bookmaker.title,
               odds: home1.price,
@@ -338,7 +343,7 @@ function detectMiddles(event: Event): Opportunity[] {
               stake: 50,
             },
             {
-              outcome: event.away_team,
+              outcome: `${event.away_team} ${awaySpread > 0 ? '+' : ''}${awaySpread}`,
               bookmaker: book2.bookmaker.key,
               bookmakerTitle: book2.bookmaker.title,
               odds: away2.price,
@@ -352,6 +357,8 @@ function detectMiddles(event: Event): Opportunity[] {
   }
 
   // Check totals for middles
+  // A totals middle: Over 220 at Book1, Under 223 at Book2
+  // If total = 221 or 222, BOTH win
   const totalBooks: Map<string, { bookmaker: Bookmaker; outcomes: Outcome[] }> = new Map();
 
   for (const bm of event.bookmakers) {
@@ -368,19 +375,15 @@ function detectMiddles(event: Event): Opportunity[] {
       const book2 = totalBooks.get(totalBookKeys[j])!;
 
       const over1 = book1.outcomes.find(o => o.name === 'Over');
-      const under1 = book1.outcomes.find(o => o.name === 'Under');
-      const over2 = book2.outcomes.find(o => o.name === 'Over');
       const under2 = book2.outcomes.find(o => o.name === 'Under');
 
       if (!over1?.point || !under2?.point) continue;
 
-      // Middle on totals: Over X at book1, Under Y at book2 where Y > X
-      const middleWidth = (under2.point || 0) - (over1.point || 0);
+      // Middle on totals: Under line must be higher than Over line
+      // Over 220 at book1, Under 223 at book2 = 3 point middle
+      const middleWidth = under2.point - over1.point;
 
       if (middleWidth >= MIN_MIDDLE_WIDTH) {
-        const impliedProb = (1 / over1.price) + (1 / under2.price);
-        const edgePct = Math.max(0, ((1 / impliedProb) - 1) * 100);
-
         opportunities.push({
           eventId: event.id,
           sportKey: event.sport_key,
@@ -390,11 +393,11 @@ function detectMiddles(event: Event): Opportunity[] {
           awayTeam: event.away_team,
           type: 'MIDDLE',
           marketKey: 'totals',
-          edgePct: Math.round(edgePct * 100) / 100,
+          edgePct: middleWidth, // Show middle width as the "edge" indicator
           middleWidth: Math.round(middleWidth * 10) / 10,
           legs: [
             {
-              outcome: 'Over',
+              outcome: `Over ${over1.point}`,
               bookmaker: book1.bookmaker.key,
               bookmakerTitle: book1.bookmaker.title,
               odds: over1.price,
@@ -402,7 +405,7 @@ function detectMiddles(event: Event): Opportunity[] {
               stake: 50,
             },
             {
-              outcome: 'Under',
+              outcome: `Under ${under2.point}`,
               bookmaker: book2.bookmaker.key,
               bookmakerTitle: book2.bookmaker.title,
               odds: under2.price,
