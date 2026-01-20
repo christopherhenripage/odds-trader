@@ -2,32 +2,111 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Region configuration
+// Comprehensive sports list - all non-outright sports from The Odds API
+const ALL_SPORTS = [
+  // American Football
+  'americanfootball_nfl',
+  // Aussie Rules
+  'aussierules_afl',
+  // Basketball
+  'basketball_euroleague',
+  'basketball_nba',
+  'basketball_nbl',
+  'basketball_ncaab',
+  'basketball_wncaab',
+  // Boxing
+  'boxing_boxing',
+  // Cricket
+  'cricket_big_bash',
+  'cricket_international_t20',
+  'cricket_odi',
+  // Ice Hockey
+  'icehockey_ahl',
+  'icehockey_liiga',
+  'icehockey_mestis',
+  'icehockey_nhl',
+  'icehockey_sweden_allsvenskan',
+  'icehockey_sweden_hockey_league',
+  // Lacrosse
+  'lacrosse_ncaa',
+  // MMA
+  'mma_mixed_martial_arts',
+  // Rugby League
+  'rugbyleague_nrl',
+  // Rugby Union
+  'rugbyunion_six_nations',
+  // Soccer - Major Leagues
+  'soccer_epl',
+  'soccer_spain_la_liga',
+  'soccer_italy_serie_a',
+  'soccer_germany_bundesliga',
+  'soccer_france_ligue_one',
+  'soccer_netherlands_eredivisie',
+  'soccer_portugal_primeira_liga',
+  // Soccer - Secondary Leagues
+  'soccer_efl_champ',
+  'soccer_england_league1',
+  'soccer_england_league2',
+  'soccer_germany_bundesliga2',
+  'soccer_italy_serie_b',
+  'soccer_spain_segunda_division',
+  'soccer_france_ligue_two',
+  // Soccer - Other European
+  'soccer_belgium_first_div',
+  'soccer_austria_bundesliga',
+  'soccer_switzerland_superleague',
+  'soccer_denmark_superliga',
+  'soccer_greece_super_league',
+  'soccer_turkey_super_league',
+  'soccer_spl',
+  'soccer_league_of_ireland',
+  // Soccer - Cups & European
+  'soccer_uefa_champs_league',
+  'soccer_uefa_europa_league',
+  'soccer_fa_cup',
+  'soccer_england_efl_cup',
+  'soccer_fifa_world_cup_qualifiers_europe',
+  // Soccer - Americas
+  'soccer_usa_mls',
+  'soccer_mexico_ligamx',
+  'soccer_brazil_campeonato',
+  'soccer_argentina_primera_division',
+  'soccer_chile_campeonato',
+  'soccer_conmebol_copa_libertadores',
+  'soccer_conmebol_copa_sudamericana',
+  // Soccer - Other
+  'soccer_australia_aleague',
+  // Tennis
+  'tennis_atp_aus_open_singles',
+  'tennis_wta_aus_open_singles',
+];
+
+// Region configuration - determines which bookmakers to query
 const REGIONS = {
   us: {
     code: 'us',
     name: 'United States',
-    sports: ['basketball_nba', 'icehockey_nhl', 'americanfootball_nfl', 'baseball_mlb'],
+    sports: ALL_SPORTS, // Scan all sports
   },
   au: {
     code: 'au',
     name: 'Australia',
-    sports: ['aussierules_afl', 'rugbyleague_nrl', 'basketball_nba', 'soccer_epl'],
+    sports: ALL_SPORTS, // Scan all sports
   },
   nz: {
-    code: 'au', // NZ uses AU bookmakers (many operate in both countries)
+    code: 'au', // NZ uses AU bookmakers
     name: 'New Zealand',
-    sports: ['rugbyleague_nrl', 'rugbyunion_super_rugby', 'basketball_nba', 'soccer_epl'],
+    sports: ALL_SPORTS, // Scan all sports
   },
   uk: {
     code: 'uk',
     name: 'United Kingdom',
-    sports: ['soccer_epl', 'soccer_uefa_champs_league', 'tennis_atp_aus_open', 'basketball_nba'],
+    sports: ALL_SPORTS, // Scan all sports
   },
   eu: {
     code: 'eu',
     name: 'Europe',
-    sports: ['soccer_epl', 'soccer_uefa_champs_league', 'basketball_euroleague', 'tennis_atp_aus_open'],
+    sports: ALL_SPORTS, // Scan all sports
   },
 };
 
@@ -103,18 +182,24 @@ function sleep(ms: number): Promise<void> {
 async function fetchOdds(sportKey: string): Promise<Event[]> {
   const url = `${API_BASE}/sports/${sportKey}/odds?apiKey=${API_KEY}&regions=${REGION.code}&markets=${MARKETS.join(',')}&oddsFormat=decimal`;
 
-  // Add delay to avoid rate limiting
-  await sleep(3000);
+  // Add delay to avoid rate limiting (1 second between requests)
+  await sleep(1000);
 
   const response = await fetch(url);
 
   if (!response.ok) {
+    // 404 means no events for this sport - not an error
+    if (response.status === 404) {
+      return [];
+    }
     const text = await response.text();
     throw new Error(`API error ${response.status}: ${text}`);
   }
 
   const remaining = response.headers.get('x-requests-remaining');
-  console.log(`  API credits remaining: ${remaining}`);
+  if (remaining) {
+    console.log(`  Credits: ${remaining}`);
+  }
 
   return response.json();
 }
@@ -452,12 +537,17 @@ async function main() {
 
   const allOpportunities: Opportunity[] = [];
 
+  let scannedCount = 0;
   for (const sport of SPORTS_TO_SCAN) {
-    console.log(`Scanning ${sport}...`);
+    scannedCount++;
+    process.stdout.write(`\r[${scannedCount}/${SPORTS_TO_SCAN.length}] Scanning ${sport}...`.padEnd(70));
 
     try {
       const events = await fetchOdds(sport);
-      console.log(`  Found ${events.length} events`);
+
+      if (events.length === 0) {
+        continue; // Skip sports with no events
+      }
 
       let sportArbs = 0;
       let sportMiddles = 0;
@@ -470,11 +560,14 @@ async function main() {
         allOpportunities.push(...arbs, ...middles);
       }
 
-      console.log(`  Detected: ${sportArbs} arbs, ${sportMiddles} middles`);
+      if (sportArbs > 0 || sportMiddles > 0) {
+        console.log(`\n  ${sport}: ${events.length} events, ${sportArbs} arbs, ${sportMiddles} middles`);
+      }
     } catch (error) {
-      console.error(`  Error: ${error}`);
+      console.error(`\n  Error scanning ${sport}: ${error}`);
     }
   }
+  console.log(); // New line after progress
 
   console.log(`\n===========================================`);
   console.log(`Total opportunities found: ${allOpportunities.length}`);
