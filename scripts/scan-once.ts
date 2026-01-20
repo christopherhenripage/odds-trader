@@ -252,6 +252,17 @@ function detectArbitrages(event: Event): Opportunity[] {
     }
 
     if (bestHome.odds > 0 && bestDraw.odds > 0 && bestAway.odds > 0 && bestHome.book && bestDraw.book && bestAway.book) {
+      // IMPORTANT: Must use at least 2 different bookmakers for a real arbitrage
+      const bookmakers = new Set([
+        bestHome.book.bookmaker.key,
+        bestDraw.book.bookmaker.key,
+        bestAway.book.bookmaker.key,
+      ]);
+      if (bookmakers.size < 2) {
+        // All from same bookmaker - not a real arbitrage
+        return opportunities;
+      }
+
       // 3-way arbitrage: 1/home + 1/draw + 1/away < 1
       const impliedProb = (1 / bestHome.odds) + (1 / bestDraw.odds) + (1 / bestAway.odds);
 
@@ -321,6 +332,12 @@ function detectArbitrages(event: Event): Opportunity[] {
     }
 
     if (bestHome.odds > 0 && bestAway.odds > 0 && bestHome.book && bestAway.book) {
+      // IMPORTANT: Must use DIFFERENT bookmakers for a real arbitrage
+      if (bestHome.book.bookmaker.key === bestAway.book.bookmaker.key) {
+        // Same bookmaker - not a real arbitrage (can't bet both sides at same book)
+        return opportunities;
+      }
+
       // 2-way arbitrage: 1/home + 1/away < 1
       const impliedProb = (1 / bestHome.odds) + (1 / bestAway.odds);
 
