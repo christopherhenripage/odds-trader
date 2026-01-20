@@ -66,16 +66,26 @@ export function OpportunitiesTable() {
   const fetchOpportunities = useCallback(async () => {
     setLoading(true);
     try {
-      const filter: OpportunityFilter = {
-        sport: searchParams.get('sport') || undefined,
-        market: searchParams.get('market') || undefined,
-        type: (searchParams.get('type') as OpportunityType | 'all') || undefined,
-        minEdge: Number(searchParams.get('minEdge')) || 0,
-        minWidth: Number(searchParams.get('minWidth')) || 0,
-      };
+      // Build query params from filters
+      const params = new URLSearchParams();
+      const sport = searchParams.get('sport');
+      const market = searchParams.get('market');
+      const type = searchParams.get('type');
+      const minEdge = searchParams.get('minEdge');
+      const minWidth = searchParams.get('minWidth');
 
-      const data = await getOpportunities(filter);
-      setOpportunities(data);
+      if (sport && sport !== 'all') params.set('sport', sport);
+      if (market && market !== 'all') params.set('market', market);
+      if (type && type !== 'all') params.set('type', type);
+      if (minEdge) params.set('minEdge', minEdge);
+      if (minWidth) params.set('minWidth', minWidth);
+
+      const response = await fetch(`/api/opportunities?${params.toString()}`);
+      const data = await response.json();
+
+      if (data.opportunities) {
+        setOpportunities(data.opportunities);
+      }
       setLastRefresh(new Date());
     } catch (error) {
       console.error('Failed to fetch opportunities:', error);
