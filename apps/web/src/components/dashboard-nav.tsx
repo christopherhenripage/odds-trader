@@ -22,6 +22,8 @@ import {
   LogOut,
   User,
   Shield,
+  Calculator,
+  Gift,
 } from 'lucide-react';
 
 interface DashboardNavProps {
@@ -33,10 +35,10 @@ interface DashboardNavProps {
 }
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/portfolio', label: 'Portfolio', icon: Wallet },
-  { href: '/settings/notifications', label: 'Notifications', icon: Bell },
-  { href: '/admin', label: 'Admin', icon: Shield },
+  { href: '/dashboard', label: 'Promos', icon: Gift },
+  { href: '/calculators', label: 'Calculators', icon: Calculator },
+  { href: '/portfolio', label: 'Profit', icon: Wallet },
+  { href: '/settings/notifications', label: 'Alerts', icon: Bell },
 ];
 
 export function DashboardNav({ user }: DashboardNavProps) {
@@ -52,8 +54,8 @@ export function DashboardNav({ user }: DashboardNavProps) {
               <div className="absolute inset-0 blur-md bg-neon-green/40" />
             </div>
             <span className="font-bold tracking-tight hidden sm:inline-block">
-              <span className="text-neon-green">ODDS</span>
-              <span className="text-white/80">TRADER</span>
+              <span className="text-neon-green">PROMO</span>
+              <span className="text-white/80">PROFIT</span>
             </span>
           </Link>
           <nav className="flex items-center gap-1">
