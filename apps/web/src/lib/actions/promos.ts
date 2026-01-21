@@ -5,12 +5,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PromoType, PromoStatus, CompletedPromoStatus, BookmakerStatus } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { unstable_noStore as noStore } from 'next/cache';
 
 // ============================================
 // Promo Actions
 // ============================================
 
 export async function getActivePromos() {
+  noStore();
   const promos = await prisma.promo.findMany({
     where: {
       status: 'ACTIVE',
