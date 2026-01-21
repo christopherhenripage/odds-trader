@@ -69,6 +69,10 @@ model User {
   paperAccount         PaperAccount?
   paperPositions       PaperPosition[]
   opportunityDeliveries OpportunityDelivery[]
+
+  // Promo Profit Tracker
+  completedPromos      CompletedPromo[]
+  bookmakerAccounts    BookmakerAccount[]
 }
 
 // ============================================
@@ -242,4 +246,131 @@ model WorkerHeartbeat {
   apiCalls    Int      @default(0)
 
   @@index([createdAt])
+}
+
+// ============================================
+// Promo Profit Tracker Models
+// ============================================
+
+enum PromoType {
+  SIGN_UP_BONUS      // New account bonus
+  DEPOSIT_MATCH      // Deposit match bonus
+  FREE_BET           // Free bet credit
+  ODDS_BOOST         // Enhanced odds
+  MONEY_BACK         // Money back if X happens
+  MULTI_BOOST        // Multi/parlay boost
+  RELOAD_BONUS       // Existing customer deposit bonus
+  OTHER              // Other promo types
+}
+
+enum PromoStatus {
+  ACTIVE             // Currently available
+  EXPIRED            // No longer available
+  UPCOMING           // Coming soon
+}
+
+model Promo {
+  id              String      @id @default(cuid())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  bookmaker       String      // e.g., "sportsbet", "ladbrokes"
+  bookmakerName   String      // Display name: "Sportsbet"
+  title           String      // "Bet $50, Get $50 Free Bet"
+  description     String?     // Longer description
+  type            PromoType
+  status          PromoStatus @default(ACTIVE)
+
+  // Value fields
+  minDeposit      Float?      // Minimum deposit required
+  maxBonus        Float?      // Maximum bonus value
+  estimatedValue  Float?      // Estimated $ value (EV)
+  wagerReq        Float?      // Wagering requirement multiplier
+  minOdds         Float?      // Minimum odds requirement
+
+  // Validity
+  expiresAt       DateTime?
+  termsUrl        String?
+
+  // For ordering/featuring
+  featured        Boolean     @default(false)
+  sortOrder       Int         @default(0)
+
+  completedPromos CompletedPromo[]
+
+  @@index([bookmaker])
+  @@index([status])
+  @@index([type])
+}
+
+enum CompletedPromoStatus {
+  IN_PROGRESS        // Started but not finished
+  COMPLETED          // Successfully extracted profit
+  FAILED             // Lost money or couldn't complete
+}
+
+model CompletedPromo {
+  id              String               @id @default(cuid())
+  userId          String
+  promoId         String?              // Link to Promo if from our list
+  createdAt       DateTime             @default(now())
+  completedAt     DateTime?
+
+  // Promo details (copied for history even if promo deleted)
+  bookmaker       String
+  promoTitle      String
+  promoType       PromoType
+
+  // Financial tracking
+  qualifyingStake Float?               // Amount wagered to qualify
+  qualifyingLoss  Float?               // Loss on qualifying bet
+  freeStake       Float?               // Free bet value
+  profit          Float?               // Net profit extracted
+  status          CompletedPromoStatus @default(IN_PROGRESS)
+
+  notes           String?
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promo Promo? @relation(fields: [promoId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([promoId])
+  @@index([createdAt])
+  @@index([bookmaker])
+}
+
+enum BookmakerStatus {
+  ACTIVE             // Good standing
+  LIMITED            // Account limited (restricted stakes)
+  GUBBED             // Banned from promos
+  BANNED             // Account closed
+  PENDING            // Awaiting verification
+}
+
+model BookmakerAccount {
+  id              String          @id @default(cuid())
+  userId          String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  bookmaker       String          // e.g., "sportsbet"
+  bookmakerName   String          // Display name
+  status          BookmakerStatus @default(ACTIVE)
+
+  // Balance tracking (optional)
+  balance         Float?
+  lastUpdated     DateTime?
+
+  // Account details
+  username        String?         // For reference only
+  signUpDate      DateTime?
+  signUpBonus     Boolean         @default(false) // Did they claim sign-up bonus?
+
+  notes           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookmaker])
+  @@index([userId])
+  @@index([status])
 }
