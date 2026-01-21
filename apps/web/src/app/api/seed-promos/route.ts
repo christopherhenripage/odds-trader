@@ -2,15 +2,21 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { PromoType, PromoStatus } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Check current count
     const existingCount = await prisma.promo.count();
+    const existingPromos = await prisma.promo.findMany({
+      select: { id: true, title: true, bookmakerName: true, status: true }
+    });
 
     if (existingCount > 0) {
       return NextResponse.json({
         message: 'Promos already exist',
-        count: existingCount
+        count: existingCount,
+        existing: existingPromos
       });
     }
 
