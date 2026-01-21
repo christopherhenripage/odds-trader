@@ -43,9 +43,6 @@ export async function getPromosByBookmaker(bookmaker: string) {
 
 // Seed some initial promos (for demo/development)
 export async function seedInitialPromos() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return { error: 'Not authenticated' };
-
   const existingPromos = await prisma.promo.count();
   if (existingPromos > 0) return { message: 'Promos already seeded' };
 
